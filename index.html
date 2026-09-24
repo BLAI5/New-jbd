@@ -1,1168 +1,585 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JBD Inventory & JESSA PO Tracker</title>
-    <!-- React & Babel CDNs -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white; color: black; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JBD Inventory & JESSA PO Tracker</title>
+<!-- React & Babel CDNs -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+body { font-family: 'Inter', sans-serif; }
+@media print {
+.no-print { display: none !important; }
+.print-only { display: block !important; }
+body { background: white; color: black; }
+}
+</style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
-    <div id="root">
-        <!-- Initial Loading Indicator -->
-        <div class="min-h-screen flex items-center justify-center bg-slate-900 text-white font-sans p-4">
-            <div class="text-center space-y-3">
-                <div class="inline-block animate-spin text-3xl text-indigo-500">
-                    <i class="fa-solid fa-circle-notch"></i>
-                </div>
-                <h2 class="text-xl font-bold">Loading JBD & JESSA Tracker...</h2>
-                <p class="text-xs text-slate-400">Connecting to database...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK Modular Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            setDoc, 
-            updateDoc, 
-            deleteDoc, 
-            onSnapshot, 
-            query 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // =========================================================================
-        // PASTE YOUR FIREBASE CONFIG HERE:
-        // =========================================================================
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-
-            window.FB = { app, auth, db, signInAnonymously, onAuthStateChanged, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query };
-            window.dispatchEvent(new Event('firebase-ready'));
-        } catch (e) {
-            console.error("Firebase init failed, falling back to local mode:", e);
-            window.FB = null;
-            window.dispatchEvent(new Event('firebase-ready'));
-        }
-    </script>
-
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-
-        // Fallback Local Storage Data if Firestore is disconnected
-        const FALLBACK_INVENTORY = [
-            { id: 'inv-1', sku: 'TSHIRT-BLK-M', name: 'Black Unisex T-Shirt (M)', category: 'Apparel', stock: 45, reorderPoint: 10, unitCost: 4.50, sellingPrice: 22.00, vendor: 'Alpha Prints' },
-            { id: 'inv-2', sku: 'VINYL-GLOSS-WHT', name: 'White Gloss Vinyl Roll 12x10yd', category: 'Raw Materials', stock: 8, reorderPoint: 10, unitCost: 15.00, sellingPrice: 35.00, vendor: 'Craft Supply Co' },
-            { id: 'inv-3', sku: 'STICKER-4IN-CUSTOM', name: 'Custom 4" Vinyl Sticker Batch', category: 'Finished Goods', stock: 250, reorderPoint: 50, unitCost: 0.35, sellingPrice: 3.50, vendor: 'In-House' }
-        ];
-
-        const FALLBACK_ORDERS = [
-            {
-                id: 'ORD-1001',
-                orderNumber: 'JESSA-ORD-1001',
-                customerOrVendor: 'Local Winter Market',
-                type: 'SALE',
-                status: 'Fulfilled',
-                date: '2026-08-10',
-                notes: 'Paid via Square reader',
-                items: [
-                    { itemId: 'inv-1', sku: 'TSHIRT-BLK-M', name: 'Black Unisex T-Shirt (M)', qty: 5, unitPrice: 22.00, unitCost: 4.50 },
-                    { itemId: 'inv-3', sku: 'STICKER-4IN-CUSTOM', name: 'Custom 4" Vinyl Sticker Batch', qty: 20, unitPrice: 3.50, unitCost: 0.35 }
-                ],
-                totalAmount: 180.00
-            }
-        ];
-
-        function App() {
-            const [fbReady, setFbReady] = useState(false);
-            const [user, setUser] = useState(null);
-            const [activeTab, setActiveTab] = useState('dashboard');
-            
-            const [inventory, setInventory] = useState([]);
-            const [orders, setOrders] = useState([]);
-            const [loading, setLoading] = useState(true);
-
-            // Filter & Modal States
-            const [searchQuery, setSearchQuery] = useState('');
-            const [orderSearchQuery, setOrderSearchQuery] = useState('');
-            const [categoryFilter, setCategoryFilter] = useState('All');
-            const [editingItem, setEditingItem] = useState(null);
-            const [isItemModalOpen, setIsItemModalOpen] = useState(null);
-            const [editingOrder, setEditingOrder] = useState(null);
-            const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
-            const [notification, setNotification] = useState(null);
-
-            const showToast = (message, type = 'success') => {
-                setNotification({ message, type });
-                setTimeout(() => setNotification(null), 3500);
-            };
-
-            // 1. Wait for Firebase script to finish loading safely
-            useEffect(() => {
-                if (window.FB) {
-                    setFbReady(true);
-                } else {
-                    const handleReady = () => setFbReady(true);
-                    window.addEventListener('firebase-ready', handleReady);
-                    return () => window.removeEventListener('firebase-ready', handleReady);
-                }
-            }, []);
-
-            // 2. Initialize Auth once Firebase is Ready
-            useEffect(() => {
-                if (!fbReady) return;
-
-                const initAuth = async () => {
-                    if (!window.FB || !window.FB.auth) {
-                        const savedInv = localStorage.getItem('jbd_inventory');
-                        const savedOrd = localStorage.getItem('jbd_orders');
-                        setInventory(savedInv ? JSON.parse(savedInv) : FALLBACK_INVENTORY);
-                        setOrders(savedOrd ? JSON.parse(savedOrd) : FALLBACK_ORDERS);
-                        setLoading(false);
-                        return;
-                    }
-
-                    const { auth, signInAnonymously, onAuthStateChanged } = window.FB;
-                    
-                    try {
-                        // Sign in anonymously to satisfy request.auth != null in security rules
-                        await signInAnonymously(auth);
-                    } catch (err) {
-                        console.warn("Auth fallback warning:", err);
-                    }
-
-                    onAuthStateChanged(auth, (u) => {
-                        setUser(u);
-                    });
-                };
-
-                initAuth();
-            }, [fbReady]);
-
-            // 3. Real-time Firestore Sync
-            useEffect(() => {
-                if (!fbReady) return;
-                
-                if (!window.FB || !window.FB.db) {
-                    setLoading(false);
-                    return;
-                }
-
-                const { db, collection, onSnapshot, query } = window.FB;
-
-                // Sync directly to the top-level 'inventory' and 'orders' collections
-                const invColRef = collection(db, 'inventory');
-                const ordColRef = collection(db, 'orders');
-
-                const unsubInv = onSnapshot(query(invColRef), 
-                    (snapshot) => {
-                        const invList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setInventory(invList.length > 0 ? invList : FALLBACK_INVENTORY);
-                        setLoading(false);
-                    },
-                    (err) => {
-                        console.warn("Firestore Inventory snapshot error:", err);
-                        const savedInv = localStorage.getItem('jbd_inventory');
-                        setInventory(savedInv ? JSON.parse(savedInv) : FALLBACK_INVENTORY);
-                        setLoading(false);
-                    }
-                );
-
-                const unsubOrd = onSnapshot(query(ordColRef), 
-                    (snapshot) => {
-                        const ordList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setOrders(ordList.length > 0 ? ordList : FALLBACK_ORDERS);
-                    },
-                    (err) => {
-                        console.warn("Firestore Orders snapshot error:", err);
-                        const savedOrd = localStorage.getItem('jbd_orders');
-                        setOrders(savedOrd ? JSON.parse(savedOrd) : FALLBACK_ORDERS);
-                    }
-                );
-
-                return () => {
-                    unsubInv();
-                    unsubOrd();
-                };
-            }, [fbReady, user]);
-
-            // Save to LocalStorage Backup
-            useEffect(() => {
-                if (inventory.length > 0) localStorage.setItem('jbd_inventory', JSON.stringify(inventory));
-            }, [inventory]);
-
-            useEffect(() => {
-                if (orders.length > 0) localStorage.setItem('jbd_orders', JSON.stringify(orders));
-            }, [orders]);
-
-            // Inventory Item Actions
-            const handleSaveItem = async (itemData) => {
-                const itemId = itemData.id || `inv-${Date.now()}`;
-                const payload = { ...itemData, id: itemId };
-
-                if (window.FB && window.FB.db) {
-                    const { db, doc, setDoc } = window.FB;
-                    const itemRef = doc(db, 'inventory', itemId);
-                    await setDoc(itemRef, payload, { merge: true });
-                } else {
-                    setInventory(prev => {
-                        const exists = prev.some(i => i.id === itemId);
-                        return exists ? prev.map(i => i.id === itemId ? payload : i) : [payload, ...prev];
-                    });
-                }
-
-                showToast(itemData.id ? `Updated "${itemData.name}"` : `Added "${itemData.name}"`);
-                setIsItemModalOpen(null);
-                setEditingItem(null);
-            };
-
-            const handleQuickStockAdjust = async (itemId, delta) => {
-                const targetItem = inventory.find(i => i.id === itemId);
-                if (!targetItem) return;
-                const newStock = Math.max(0, (targetItem.stock || 0) + delta);
-
-                if (window.FB && window.FB.db) {
-                    const { db, doc, updateDoc } = window.FB;
-                    const invRef = doc(db, 'inventory', itemId);
-                    await updateDoc(invRef, { stock: newStock });
-                } else {
-                    setInventory(prev => prev.map(i => i.id === itemId ? { ...i, stock: newStock } : i));
-                }
-
-                showToast(`Updated stock for ${targetItem.name}: ${newStock} units`);
-            };
-
-            const handleDeleteItem = async (id) => {
-                if (!confirm("Are you sure you want to delete this inventory item?")) return;
-
-                if (window.FB && window.FB.db) {
-                    const { db, doc, deleteDoc } = window.FB;
-                    const itemRef = doc(db, 'inventory', id);
-                    await deleteDoc(itemRef);
-                } else {
-                    setInventory(prev => prev.filter(i => i.id !== id));
-                }
-                showToast("Item removed from inventory", "info");
-            };
-
-            // Order Stock Adjustment Helpers
-            const revertOrderStockEffect = async (order) => {
-                const isActive = order.status === 'Committed' || order.status === 'Fulfilled';
-                if (!isActive) return;
-
-                const revertMultiplier = order.type === 'SALE' ? 1 : -1;
-
-                for (let line of order.items) {
-                    const invItem = inventory.find(i => i.id === line.itemId);
-                    if (invItem) {
-                        const revertedStock = Math.max(0, (invItem.stock || 0) + (line.qty * revertMultiplier));
-                        if (window.FB && window.FB.db) {
-                            const { db, doc, updateDoc } = window.FB;
-                            const invRef = doc(db, 'inventory', invItem.id);
-                            await updateDoc(invRef, { stock: revertedStock });
-                        } else {
-                            setInventory(prev => prev.map(i => i.id === invItem.id ? { ...i, stock: revertedStock } : i));
-                        }
-                    }
-                }
-            };
-
-            const applyOrderStockEffect = async (order) => {
-                const isActive = order.status === 'Committed' || order.status === 'Fulfilled';
-                if (!isActive) return;
-
-                const applyMultiplier = order.type === 'SALE' ? -1 : 1;
-
-                for (let line of order.items) {
-                    const invItem = inventory.find(i => i.id === line.itemId);
-                    if (invItem) {
-                        const newStock = Math.max(0, (invItem.stock || 0) + (line.qty * applyMultiplier));
-                        if (window.FB && window.FB.db) {
-                            const { db, doc, updateDoc } = window.FB;
-                            const invRef = doc(db, 'inventory', invItem.id);
-                            await updateDoc(invRef, { stock: newStock });
-                        } else {
-                            setInventory(prev => prev.map(i => i.id === invItem.id ? { ...i, stock: newStock } : i));
-                        }
-                    }
-                }
-            };
-
-            const handleUpdateOrderStatus = async (orderId, newStatus) => {
-                const targetOrder = orders.find(o => o.id === orderId);
-                if (!targetOrder || targetOrder.status === newStatus) return;
-
-                await revertOrderStockEffect(targetOrder);
-                const updatedOrder = { ...targetOrder, status: newStatus };
-                await applyOrderStockEffect(updatedOrder);
-
-                if (window.FB && window.FB.db) {
-                    const { db, doc, updateDoc } = window.FB;
-                    const orderRef = doc(db, 'orders', orderId);
-                    await updateDoc(orderRef, { status: newStatus });
-                } else {
-                    setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
-                }
-
-                showToast(`Order #${targetOrder.orderNumber} status changed to ${newStatus}`);
-            };
-
-            const handleSaveOrder = async (orderData, autoCommit = true) => {
-                const isEditing = !!orderData.id;
-                const orderId = orderData.id || `ord-${Date.now()}`;
-                
-                let orderNumber = orderData.orderNumber;
-                if (!orderNumber) {
-                    orderNumber = orderData.type === 'SALE' 
-                        ? `JESSA-ORD-${Math.floor(1000 + Math.random() * 9000)}`
-                        : `JBD-PO-${Math.floor(1000 + Math.random() * 9000)}`;
-                }
-
-                const existingOrder = orders.find(o => o.id === orderId);
-                if (existingOrder) {
-                    await revertOrderStockEffect(existingOrder);
-                }
-
-                const finalStatus = autoCommit ? 'Fulfilled' : (orderData.status || 'Draft');
-
-                const fullOrder = {
-                    ...orderData,
-                    id: orderId,
-                    orderNumber,
-                    status: finalStatus,
-                    date: orderData.date || new Date().toISOString().split('T')[0]
-                };
-
-                if (window.FB && window.FB.db) {
-                    const { db, doc, setDoc } = window.FB;
-                    const orderRef = doc(db, 'orders', orderId);
-                    await setDoc(orderRef, fullOrder);
-                } else {
-                    setOrders(prev => {
-                        const exists = prev.some(o => o.id === orderId);
-                        return exists ? prev.map(o => o.id === orderId ? fullOrder : o) : [fullOrder, ...prev];
-                    });
-                }
-
-                await applyOrderStockEffect(fullOrder);
-
-                showToast(isEditing ? `Updated order #${orderNumber}` : `Created order #${orderNumber}`);
-                setEditingOrder(null);
-                setActiveTab('orders');
-            };
-
-            const handleDeleteOrder = async (orderId) => {
-                const targetOrder = orders.find(o => o.id === orderId);
-                if (!targetOrder) return;
-
-                if (!confirm(`Are you sure you want to delete ${targetOrder.orderNumber}? Any deducted stock will be restored.`)) return;
-
-                await revertOrderStockEffect(targetOrder);
-
-                if (window.FB && window.FB.db) {
-                    const { db, doc, deleteDoc } = window.FB;
-                    const orderRef = doc(db, 'orders', orderId);
-                    await deleteDoc(orderRef);
-                } else {
-                    setOrders(prev => prev.filter(o => o.id !== orderId));
-                }
-
-                showToast(`Deleted ${targetOrder.orderNumber} and restored stock`, "info");
-            };
-
-            // Calculated Metrics
-            const categories = useMemo(() => ['All', ...new Set(inventory.map(i => i.category || 'General'))], [inventory]);
-
-            const metrics = useMemo(() => {
-                const totalStockItems = inventory.reduce((acc, i) => acc + (Number(i.stock) || 0), 0);
-                const totalInventoryValuationCost = inventory.reduce((acc, i) => acc + ((Number(i.stock) || 0) * (Number(i.unitCost) || 0)), 0);
-                const lowStockCount = inventory.filter(i => i.stock <= (i.reorderPoint || 5)).length;
-
-                const totalSalesRevenue = orders
-                    .filter(o => o.type === 'SALE' && o.status !== 'Cancelled')
-                    .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-
-                const totalCOGSSold = orders
-                    .filter(o => o.type === 'SALE' && o.status !== 'Cancelled')
-                    .reduce((acc, o) => {
-                        const costSum = (o.items || []).reduce((s, item) => s + ((item.unitCost || 0) * item.qty), 0);
-                        return acc + costSum;
-                    }, 0);
-
-                const netRealizedProfit = totalSalesRevenue - totalCOGSSold;
-
-                return { totalStockItems, totalInventoryValuationCost, lowStockCount, totalSalesRevenue, netRealizedProfit };
-            }, [inventory, orders]);
-
-            if (loading) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white font-sans p-4">
-                        <div className="text-center space-y-3">
-                            <div className="inline-block animate-spin text-3xl text-indigo-500">
-                                <i className="fa-solid fa-circle-notch"></i>
-                            </div>
-                            <h2 className="text-xl font-bold">Connecting JBD & JESSA Tracker...</h2>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="min-h-screen flex flex-col md:flex-row">
-                    {/* Notification Toast */}
-                    {notification && (
-                        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 ${
-                            notification.type === 'info' ? 'bg-blue-600' : 'bg-emerald-600'
-                        }`}>
-                            <i className="fa-solid fa-circle-check"></i>
-                            {notification.message}
-                        </div>
-                    )}
-
-                    {/* Sidebar */}
-                    <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between no-print shrink-0">
-                        <div>
-                            <div className="p-5 border-b border-slate-800">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-gradient-to-tr from-indigo-500 to-emerald-400 p-2.5 rounded-xl text-white font-bold text-lg">
-                                        JB
-                                    </div>
-                                    <div>
-                                        <h1 className="font-bold text-white text-base leading-tight">JBD & JESSA</h1>
-                                        <p className="text-xs text-slate-400">Inventory & PO App</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <nav className="p-3 space-y-1">
-                                <button onClick={() => { setActiveTab('dashboard'); setEditingOrder(null); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400'}`}>
-                                    <i className="fa-solid fa-chart-pie w-5"></i> Dashboard
-                                </button>
-                                <button onClick={() => { setActiveTab('inventory'); setEditingOrder(null); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'inventory' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400'}`}>
-                                    <i className="fa-solid fa-boxes-stacked w-5"></i> Inventory & Profit
-                                    {metrics.lowStockCount > 0 && <span className="ml-auto bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-semibold">{metrics.lowStockCount}</span>}
-                                </button>
-                                <button onClick={() => { setActiveTab('orders'); setEditingOrder(null); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400'}`}>
-                                    <i className="fa-solid fa-receipt w-5"></i> Orders & POs
-                                </button>
-                                <button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'new-order' && !editingOrder ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-emerald-400'}`}>
-                                    <i className="fa-solid fa-plus-circle w-5"></i> New Order / Sale
-                                </button>
-                            </nav>
-                        </div>
-
-                        <div className="p-4 m-3 bg-slate-800/60 rounded-xl border border-slate-700/50 text-xs">
-                            <div className="flex justify-between text-slate-400 mb-1">
-                                <span>Realized Revenue:</span>
-                                <span className="font-semibold text-emerald-400">${metrics.totalSalesRevenue.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-slate-400">
-                                <span>Net Profit:</span>
-                                <span className="font-semibold text-indigo-300">${metrics.netRealizedProfit.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* Main Content View */}
-                    <main className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto min-h-screen">
-                        
-                        {/* 1. DASHBOARD */}
-                        {activeTab === 'dashboard' && (
-                            <div className="space-y-6 max-w-7xl mx-auto">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-slate-900">Unified Business Dashboard</h2>
-                                        <p className="text-slate-500 text-sm">Real-time sync between JBD Inventory and JESSA POs</p>
-                                    </div>
-                                    <button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm shadow-sm transition">
-                                        <i className="fa-solid fa-cart-plus"></i> Create New Transaction
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                                        <div className="text-xs font-semibold text-slate-500 uppercase">Sales Revenue</div>
-                                        <div className="text-2xl font-bold text-slate-900 mt-2">${metrics.totalSalesRevenue.toFixed(2)}</div>
-                                    </div>
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                                        <div className="text-xs font-semibold text-slate-500 uppercase">Net Realized Profit</div>
-                                        <div className="text-2xl font-bold text-indigo-600 mt-2">${metrics.netRealizedProfit.toFixed(2)}</div>
-                                    </div>
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                                        <div className="text-xs font-semibold text-slate-500 uppercase">Inventory Valuation (Cost)</div>
-                                        <div className="text-2xl font-bold text-slate-900 mt-2">${metrics.totalInventoryValuationCost.toFixed(2)}</div>
-                                    </div>
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                                        <div className="text-xs font-semibold text-slate-500 uppercase">Low Stock Alerts</div>
-                                        <div className="text-2xl font-bold text-amber-600 mt-2">{metrics.lowStockCount}</div>
-                                    </div>
-                                </div>
-
-                                {/* Low Stock Alert Section */}
-                                {metrics.lowStockCount > 0 && (
-                                    <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-2 text-amber-800 font-semibold">
-                                                <i className="fa-solid fa-triangle-exclamation"></i>
-                                                Attention Needed: Reorder Stock
-                                            </div>
-                                            <button onClick={() => setActiveTab('inventory')} className="text-xs text-amber-800 hover:text-amber-900 font-semibold underline">
-                                                Manage Inventory
-                                            </button>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                            {inventory.filter(i => i.stock <= (i.reorderPoint || 5)).map(item => (
-                                                <div key={item.id} className="bg-white p-3 rounded-lg border border-amber-200 shadow-sm flex items-center justify-between">
-                                                    <div>
-                                                        <div className="font-semibold text-sm text-slate-800">{item.name}</div>
-                                                        <div className="text-xs text-slate-400">SKU: {item.sku}</div>
-                                                    </div>
-                                                    <div className="text-right flex items-center gap-2">
-                                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-xs">
-                                                            {item.stock} left
-                                                        </span>
-                                                        <button 
-                                                            onClick={() => handleQuickStockAdjust(item.id, 10)} 
-                                                            className="text-xs bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 px-2 py-1 rounded font-bold"
-                                                            title="Add +10 stock"
-                                                        >
-                                                            +10
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Recent Orders */}
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="p-5 border-b border-slate-200 flex justify-between items-center">
-                                        <h3 className="font-bold text-slate-800 text-base">Recent Transactions</h3>
-                                        <button onClick={() => setActiveTab('orders')} className="text-xs font-semibold text-indigo-600">View All →</button>
-                                    </div>
-                                    <div className="divide-y divide-slate-100">
-                                        {orders.slice(0, 5).map(order => (
-                                            <div key={order.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition">
-                                                <div>
-                                                    <div className="font-semibold text-slate-800 text-sm">{order.orderNumber}</div>
-                                                    <div className="text-xs text-slate-500">{order.customerOrVendor} • {order.date}</div>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-slate-800 text-sm">${(order.totalAmount || 0).toFixed(2)}</div>
-                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                                            order.status === 'Fulfilled' ? 'bg-emerald-100 text-emerald-700' : 
-                                                            order.status === 'Committed' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
-                                                        }`}>{order.status}</span>
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => { setEditingOrder(order); setActiveTab('new-order'); }}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded"
-                                                        title="Edit Order"
-                                                    >
-                                                        <i className="fa-solid fa-pen-to-square"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 2. INVENTORY VIEW */}
-                        {activeTab === 'inventory' && (
-                            <div className="space-y-6 max-w-7xl mx-auto">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-slate-900">JBD Stock & Profit Tracker</h2>
-                                        <p className="text-slate-500 text-sm">Full stock editing and margin analysis</p>
-                                    </div>
-                                    <button onClick={() => { setEditingItem({}); setIsItemModalOpen('create'); }} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition">
-                                        + Add Inventory Item
-                                    </button>
-                                </div>
-
-                                {/* Filter Bar */}
-                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
-                                    <div className="flex-1 relative">
-                                        <i className="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
-                                        <input 
-                                            type="text"
-                                            placeholder="Search SKU, Name, or Vendor..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                    </div>
-                                    <div className="w-full md:w-48">
-                                        <select 
-                                            value={categoryFilter}
-                                            onChange={(e) => setCategoryFilter(e.target.value)}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        >
-                                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm text-slate-600">
-                                            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase">
-                                                <tr>
-                                                    <th className="p-4">SKU / Item Details</th>
-                                                    <th className="p-4 text-center">Quick Adjust Stock</th>
-                                                    <th className="p-4 text-right">Unit Cost</th>
-                                                    <th className="p-4 text-right">Selling Price</th>
-                                                    <th className="p-4 text-right">Profit / Margin</th>
-                                                    <th className="p-4 text-center">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {inventory
-                                                    .filter(item => {
-                                                        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                                                            item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                                            (item.vendor && item.vendor.toLowerCase().includes(searchQuery.toLowerCase()));
-                                                        const matchesCat = categoryFilter === 'All' || item.category === categoryFilter;
-                                                        return matchesSearch && matchesCat;
-                                                    })
-                                                    .map(item => {
-                                                        const cost = Number(item.unitCost) || 0;
-                                                        const price = Number(item.sellingPrice) || 0;
-                                                        const profit = price - cost;
-                                                        const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
-                                                        const isLow = item.stock <= (item.reorderPoint || 5);
-
-                                                        return (
-                                                            <tr key={item.id} className="hover:bg-slate-50/80 transition">
-                                                                <td className="p-4">
-                                                                    <div className="font-semibold text-slate-800">{item.name}</div>
-                                                                    <div className="text-xs text-slate-400 font-mono">SKU: {item.sku} • Vendor: {item.vendor || 'N/A'}</div>
-                                                                </td>
-                                                                <td className="p-4 text-center">
-                                                                    <div className="inline-flex items-center gap-1.5 border border-slate-200 rounded-lg p-1 bg-slate-50">
-                                                                        <button 
-                                                                            onClick={() => handleQuickStockAdjust(item.id, -1)}
-                                                                            className="w-6 h-6 bg-white hover:bg-rose-100 hover:text-rose-700 font-bold text-xs rounded border border-slate-200"
-                                                                            title="Deduct 1"
-                                                                        >-</button>
-                                                                        <span className={`px-2 font-bold text-xs ${isLow ? 'text-amber-700' : 'text-slate-800'}`}>
-                                                                            {item.stock}
-                                                                        </span>
-                                                                        <button 
-                                                                            onClick={() => handleQuickStockAdjust(item.id, 1)}
-                                                                            className="w-6 h-6 bg-white hover:bg-emerald-100 hover:text-emerald-700 font-bold text-xs rounded border border-slate-200"
-                                                                            title="Add 1"
-                                                                        >+</button>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="p-4 text-right">${cost.toFixed(2)}</td>
-                                                                <td className="p-4 text-right font-bold text-slate-900">${price.toFixed(2)}</td>
-                                                                <td className="p-4 text-right">
-                                                                    <div className="font-bold text-emerald-600">+${profit.toFixed(2)}</div>
-                                                                    <div className="text-[10px] text-slate-400 font-medium">{margin}% margin</div>
-                                                                </td>
-                                                                <td className="p-4 text-center">
-                                                                    <button onClick={() => { setEditingItem(item); setIsItemModalOpen('edit'); }} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded" title="Edit Full Details"><i className="fa-solid fa-pen-to-square"></i></button>
-                                                                    <button onClick={() => handleDeleteItem(item.id)} className="p-1.5 text-slate-400 hover:text-rose-600 ml-1 rounded" title="Delete Item"><i className="fa-solid fa-trash-can"></i></button>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 3. ORDERS VIEW */}
-                        {activeTab === 'orders' && (
-                            <div className="space-y-6 max-w-7xl mx-auto">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-slate-900">JESSA Orders & Purchase Orders</h2>
-                                        <p className="text-slate-500 text-sm">Edit line items, update quantities, or remove transactions</p>
-                                    </div>
-                                    <button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">
-                                        + Create Order / PO
-                                    </button>
-                                </div>
-
-                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative">
-                                    <i className="fa-solid fa-magnifying-glass absolute left-7 top-6 text-slate-400 text-sm"></i>
-                                    <input 
-                                        type="text"
-                                        placeholder="Search order #, customer, or vendor..."
-                                        value={orderSearchQuery}
-                                        onChange={(e) => setOrderSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-
-                                <div className="space-y-4">
-                                    {orders
-                                        .filter(o => 
-                                            o.orderNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
-                                            o.customerOrVendor.toLowerCase().includes(orderSearchQuery.toLowerCase())
-                                        )
-                                        .map(order => (
-                                            <div key={order.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${order.type === 'SALE' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
-                                                                {order.type === 'SALE' ? 'CUSTOMER SALE' : 'VENDOR PO'}
-                                                            </span>
-                                                            <h3 className="font-bold text-slate-800 text-base">{order.orderNumber}</h3>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            Party: <strong className="text-slate-700">{order.customerOrVendor}</strong> • Date: {order.date}
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <select 
-                                                            value={order.status}
-                                                            onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                                                            className={`text-xs font-bold px-3 py-1.5 rounded-lg border focus:outline-none cursor-pointer ${
-                                                                order.status === 'Fulfilled' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                                                                order.status === 'Committed' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
-                                                                order.status === 'Cancelled' ? 'bg-rose-50 border-rose-200 text-rose-700' :
-                                                                'bg-amber-50 border-amber-200 text-amber-700'
-                                                            }`}
-                                                        >
-                                                            <option value="Draft">Draft (No Stock Change)</option>
-                                                            <option value="Committed">Committed (Stock Adjusted)</option>
-                                                            <option value="Fulfilled">Fulfilled (Completed)</option>
-                                                            <option value="Cancelled">Cancelled</option>
-                                                        </select>
-
-                                                        <button 
-                                                            onClick={() => { setEditingOrder(order); setActiveTab('new-order'); }}
-                                                            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5"
-                                                        >
-                                                            <i className="fa-solid fa-pen-to-square"></i>
-                                                            Edit
-                                                        </button>
-
-                                                        <button 
-                                                            onClick={() => setSelectedOrderForInvoice(order)}
-                                                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5"
-                                                        >
-                                                            <i className="fa-solid fa-print"></i>
-                                                            Print
-                                                        </button>
-
-                                                        <button 
-                                                            onClick={() => handleDeleteOrder(order.id)}
-                                                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100 transition"
-                                                            title="Delete Order"
-                                                        >
-                                                            <i className="fa-solid fa-trash-can"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="bg-slate-50 p-3 rounded-lg text-xs space-y-1">
-                                                    {(order.items || []).map((line, idx) => (
-                                                        <div key={idx} className="flex justify-between">
-                                                            <span className="font-medium text-slate-800">{line.name} (Qty: {line.qty} @ ${line.unitPrice.toFixed(2)})</span>
-                                                            <span className="font-bold text-slate-900">${(line.qty * line.unitPrice).toFixed(2)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <span className="text-slate-400 italic">{order.notes || 'No notes'}</span>
-                                                    <div className="text-sm font-bold text-slate-900">
-                                                        Total: <span className="text-indigo-600">${(order.totalAmount || 0).toFixed(2)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 4. NEW OR EDIT ORDER ENTRY */}
-                        {activeTab === 'new-order' && (
-                            <div className="max-w-4xl mx-auto space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-slate-900">
-                                            {editingOrder ? `Edit Transaction (${editingOrder.orderNumber})` : 'New Transaction Entry'}
-                                        </h2>
-                                        <p className="text-slate-500 text-sm">Add or modify quantities, items, and details.</p>
-                                    </div>
-                                    {editingOrder && (
-                                        <button 
-                                            onClick={() => { setEditingOrder(null); setActiveTab('orders'); }}
-                                            className="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg"
-                                        >
-                                            Cancel Editing
-                                        </button>
-                                    )}
-                                </div>
-
-                                <NewOrEditOrderForm 
-                                    existingOrder={editingOrder}
-                                    inventory={inventory} 
-                                    onSubmitOrder={handleSaveOrder} 
-                                    onCancel={() => { setEditingOrder(null); setActiveTab('orders'); }}
-                                />
-                            </div>
-                        )}
-                    </main>
-
-                    {/* ITEM MODAL */}
-                    {isItemModalOpen && (
-                        <InventoryModal item={editingItem} onClose={() => setIsItemModalOpen(null)} onSave={handleSaveItem} />
-                    )}
-
-                    {/* INVOICE MODAL */}
-                    {selectedOrderForInvoice && (
-                        <InvoicePrintModal order={selectedOrderForInvoice} onClose={() => setSelectedOrderForInvoice(null)} />
-                    )}
-                </div>
-            );
-        }
-
-        // Subcomponent: Form for Creating or Editing Orders
-        function NewOrEditOrderForm({ existingOrder, inventory, onSubmitOrder, onCancel }) {
-            const [orderType, setOrderType] = useState(existingOrder?.type || 'SALE');
-            const [customerOrVendor, setCustomerOrVendor] = useState(existingOrder?.customerOrVendor || '');
-            const [notes, setNotes] = useState(existingOrder?.notes || '');
-            const [cart, setCart] = useState(existingOrder?.items || []);
-
-            useEffect(() => {
-                if (existingOrder) {
-                    setOrderType(existingOrder.type || 'SALE');
-                    setCustomerOrVendor(existingOrder.customerOrVendor || '');
-                    setNotes(existingOrder.notes || '');
-                    setCart(existingOrder.items || []);
-                }
-            }, [existingOrder]);
-
-            const handleAddToCart = (item) => {
-                const existing = cart.find(c => c.itemId === item.id);
-                if (existing) {
-                    setCart(cart.map(c => c.itemId === item.id ? { ...c, qty: c.qty + 1 } : c));
-                } else {
-                    setCart([...cart, { 
-                        itemId: item.id, 
-                        sku: item.sku, 
-                        name: item.name, 
-                        qty: 1, 
-                        unitPrice: orderType === 'SALE' ? item.sellingPrice : item.unitCost, 
-                        unitCost: item.unitCost 
-                    }]);
-                }
-            };
-
-            const handleUpdateQtyDirect = (itemId, newQty) => {
-                const val = Math.max(1, Number(newQty) || 1);
-                setCart(cart.map(c => c.itemId === itemId ? { ...c, qty: val } : c));
-            };
-
-            const handleUpdateUnitPrice = (itemId, newPrice) => {
-                const val = Math.max(0, Number(newPrice) || 0);
-                setCart(cart.map(c => c.itemId === itemId ? { ...c, unitPrice: val } : c));
-            };
-
-            const handleRemoveFromCart = (itemId) => {
-                setCart(cart.filter(c => c.itemId !== itemId));
-            };
-
-            const totalAmount = cart.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
-
-            const handleSubmit = (autoCommit) => {
-                if (!customerOrVendor.trim()) return alert("Please enter a customer or vendor name.");
-                if (cart.length === 0) return alert("Please add at least one item.");
-
-                onSubmitOrder({
-                    id: existingOrder?.id,
-                    orderNumber: existingOrder?.orderNumber,
-                    type: orderType,
-                    customerOrVendor,
-                    notes,
-                    items: cart,
-                    totalAmount,
-                    status: existingOrder?.status || 'Draft'
-                }, autoCommit);
-            };
-
-            return (
-                <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-lg">
-                        <button 
-                            type="button" 
-                            onClick={() => setOrderType('SALE')} 
-                            className={`py-2 font-bold text-xs rounded transition ${orderType === 'SALE' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600'}`}
-                        >
-                            Customer Sale (Deducts Stock)
-                        </button>
-                        <button 
-                            type="button" 
-                            onClick={() => setOrderType('PURCHASE')} 
-                            className={`py-2 font-bold text-xs rounded transition ${orderType === 'PURCHASE' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600'}`}
-                        >
-                            Purchase Order (Adds Stock)
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                {orderType === 'SALE' ? 'Customer Name' : 'Vendor Name'} *
-                            </label>
-                            <input 
-                                type="text" 
-                                placeholder="Name" 
-                                value={customerOrVendor} 
-                                onChange={e => setCustomerOrVendor(e.target.value)} 
-                                className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" 
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Notes</label>
-                            <input 
-                                type="text" 
-                                placeholder="Order notes..." 
-                                value={notes} 
-                                onChange={e => setNotes(e.target.value)} 
-                                className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" 
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-2">Click Items to Add to Transaction</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 border rounded-lg">
-                            {inventory.map(item => (
-                                <button key={item.id} type="button" onClick={() => handleAddToCart(item)} className="p-2.5 bg-white border text-left text-xs rounded-lg hover:border-indigo-500 transition flex justify-between items-center">
-                                    <div>
-                                        <div className="font-bold text-slate-800">{item.name}</div>
-                                        <div className="text-slate-400">Stock: {item.stock}</div>
-                                    </div>
-                                    <span className="font-bold text-indigo-600">+ ${orderType === 'SALE' ? item.sellingPrice : item.unitCost}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 className="font-bold text-slate-800 text-sm mb-2">Line Items (Direct Quantity Editing)</h4>
-                        {cart.length === 0 ? (
-                            <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-lg border border-dashed">
-                                No items selected yet. Click items above to add.
-                            </div>
-                        ) : (
-                            <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                <table className="w-full text-left text-xs">
-                                    <thead className="bg-slate-50 border-b text-slate-500 font-semibold">
-                                        <tr>
-                                            <th className="p-3">Item</th>
-                                            <th className="p-3 text-center">Quantity (Editable)</th>
-                                            <th className="p-3 text-right">Unit Price ($)</th>
-                                            <th className="p-3 text-right">Subtotal</th>
-                                            <th className="p-3 text-center">Remove</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {cart.map(line => (
-                                            <tr key={line.itemId}>
-                                                <td className="p-3 font-semibold text-slate-800">{line.name}</td>
-                                                <td className="p-3 text-center">
-                                                    <input 
-                                                        type="number"
-                                                        min="1"
-                                                        value={line.qty}
-                                                        onChange={(e) => handleUpdateQtyDirect(line.itemId, e.target.value)}
-                                                        className="w-20 px-2 py-1 text-center font-bold border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500"
-                                                    />
-                                                </td>
-                                                <td className="p-3 text-right">
-                                                    <input 
-                                                        type="number"
-                                                        step="0.01"
-                                                        value={line.unitPrice}
-                                                        onChange={(e) => handleUpdateUnitPrice(line.itemId, e.target.value)}
-                                                        className="w-24 px-2 py-1 text-right font-medium border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500"
-                                                    />
-                                                </td>
-                                                <td className="p-3 text-right font-bold text-slate-900">${(line.qty * line.unitPrice).toFixed(2)}</td>
-                                                <td className="p-3 text-center">
-                                                    <button type="button" onClick={() => handleRemoveFromCart(line.itemId)} className="text-slate-400 hover:text-rose-600">
-                                                        <i className="fa-solid fa-xmark"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row justify-between items-center pt-3 border-t gap-3">
-                        <div className="text-lg font-bold">Total: <span className="text-emerald-600">${totalAmount.toFixed(2)}</span></div>
-                        <div className="flex gap-2">
-                            <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg text-xs font-semibold">Cancel</button>
-                            <button type="button" onClick={() => handleSubmit(false)} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold">Save Draft</button>
-                            <button type="button" onClick={() => handleSubmit(true)} className="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm">
-                                {existingOrder ? 'Update & Sync Inventory' : 'Commit & Sync Inventory'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // Subcomponent: Full Inventory Item Editing Modal
-        function InventoryModal({ item, onClose, onSave }) {
-            const [formData, setFormData] = useState({ 
-                id: item?.id || '', 
-                sku: item?.sku || '', 
-                name: item?.name || '', 
-                category: item?.category || 'Apparel',
-                stock: item?.stock ?? 0, 
-                reorderPoint: item?.reorderPoint ?? 10,
-                unitCost: item?.unitCost ?? 0, 
-                sellingPrice: item?.sellingPrice ?? 0,
-                vendor: item?.vendor || ''
-            });
-
-            return (
-                <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
-                        <div className="flex justify-between items-center border-b pb-2">
-                            <h3 className="font-bold text-slate-800 text-base">{item?.id ? 'Edit Item Details' : 'Add New Item'}</h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><i className="fa-solid fa-xmark"></i></button>
-                        </div>
-                        
-                        <div className="space-y-3 text-xs">
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="font-semibold text-slate-600">SKU *</label>
-                                    <input type="text" value={formData.sku} onChange={e => setFormData({ ...formData, sku: e.target.value })} className="w-full p-2 border rounded font-mono mt-1" />
-                                </div>
-                                <div>
-                                    <label className="font-semibold text-slate-600">Category</label>
-                                    <input type="text" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-2 border rounded mt-1" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="font-semibold text-slate-600">Product Name *</label>
-                                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-2 border rounded mt-1" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="font-semibold text-slate-600">Current Stock Qty</label>
-                                    <input type="number" value={formData.stock} onChange={e => setFormData({ ...formData, stock: Number(e.target.value) })} className="w-full p-2 border rounded font-bold mt-1" />
-                                </div>
-                                <div>
-                                    <label className="font-semibold text-slate-600">Reorder Alert Limit</label>
-                                    <input type="number" value={formData.reorderPoint} onChange={e => setFormData({ ...formData, reorderPoint: Number(e.target.value) })} className="w-full p-2 border rounded mt-1" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="font-semibold text-slate-600">Unit Cost ($)</label>
-                                    <input type="number" step="0.01" value={formData.unitCost} onChange={e => setFormData({ ...formData, unitCost: Number(e.target.value) })} className="w-full p-2 border rounded mt-1" />
-                                </div>
-                                <div>
-                                    <label className="font-semibold text-slate-600">Selling Price ($)</label>
-                                    <input type="number" step="0.01" value={formData.sellingPrice} onChange={e => setFormData({ ...formData, sellingPrice: Number(e.target.value) })} className="w-full p-2 border rounded font-bold text-emerald-600 mt-1" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="font-semibold text-slate-600">Supplier / Vendor</label>
-                                <input type="text" value={formData.vendor} onChange={e => setFormData({ ...formData, vendor: e.target.value })} className="w-full p-2 border rounded mt-1" />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-3 border-t">
-                            <button onClick={onClose} className="px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
-                            <button onClick={() => onSave(formData)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm">Save Item</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // Subcomponent: Printable Invoice Modal
-        function InvoicePrintModal({ order, onClose }) {
-            return (
-                <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-xl space-y-4 shadow-2xl">
-                        <div className="flex justify-between items-center no-print">
-                            <span className="font-bold text-sm text-slate-700">Print / Export PDF</span>
-                            <button onClick={onClose} className="text-xs bg-slate-200 px-3 py-1.5 font-bold rounded-lg">Close</button>
-                        </div>
-                        <div className="border-b pb-4">
-                            <h2 className="text-xl font-bold text-indigo-950">{order.orderNumber}</h2>
-                            <p className="text-xs text-slate-500">Party: {order.customerOrVendor} • Date: {order.date}</p>
-                        </div>
-                        <div className="space-y-1.5 text-xs">
-                            {(order.items || []).map((i, idx) => (
-                                <div key={idx} className="flex justify-between border-b border-slate-100 pb-1">
-                                    <span>{i.name} (x{i.qty} @ ${i.unitPrice.toFixed(2)})</span>
-                                    <span className="font-bold">${(i.qty * i.unitPrice).toFixed(2)}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="text-right font-bold text-lg border-t pt-2">
-                            Total: <span className="text-indigo-600">${(order.totalAmount || 0).toFixed(2)}</span>
-                        </div>
-                        <button onClick={() => window.print()} className="w-full py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-lg no-print shadow-sm">Print Document</button>
-                    </div>
-                </div>
-            );
-        }
-
-        // Mount React
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+<div id="root">
+<!-- Initial Loading Indicator -->
+<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white font-sans p-4">
+<div class="text-center space-y-3">
+<div class="inline-block animate-spin text-3xl text-indigo-500">
+<i class="fa-solid fa-circle-notch"></i>
+</div>
+<h2 class="text-xl font-bold">Loading JBD & JESSA Tracker...</h2>
+<p class="text-xs text-slate-400">Connecting to database...</p>
+</div>
+</div>
+</div>
+
+<!-- Firebase SDK Modular Scripts -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import {
+getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// =========================================================================
+// CAREFULLY PASTE YOUR FIREBASE KEYS INSIDE THE QUOTES BELOW
+// Do not delete the quotes "" or the commas , at the end of the lines!
+// =========================================================================
+const firebaseConfig = {
+apiKey: "AIzaSyAGuV3oqPzHKoB0-p9S7oFDpLYHL88c9OE",
+authDomain: "PASTE_YOUR_AUTH_DOMAIN_HERE",
+projectId: "PASTE_YOUR_PROJECT_ID_HERE",
+storageBucket: "PASTE_YOUR_STORAGE_BUCKET_HERE",
+messagingSenderId: "PASTE_YOUR_SENDER_ID_HERE",
+appId: "PASTE_YOUR_APP_ID_HERE"
+};
+
+try {
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.FB = { app, auth, db, signInAnonymously, onAuthStateChanged, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query };
+window.dispatchEvent(new Event('firebase-ready'));
+} catch (e) {
+console.error("Firebase init failed, falling back to local mode:", e);
+window.FB = null;
+window.dispatchEvent(new Event('firebase-ready'));
+}
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+// Fallback Local Storage Data if Firestore is disconnected
+const FALLBACK_INVENTORY = [
+{ id: 'inv-1', sku: 'TSHIRT-BLK-M', name: 'Black Unisex T-Shirt (M)', category: 'Apparel', stock: 45, reorderPoint: 10, unitCost: 4.50, sellingPrice: 22.00, vendor: 'Alpha Prints' }
+ ];
+const FALLBACK_ORDERS = [
+{ id: 'ORD-1001', orderNumber: 'JESSA-ORD-1001', customerOrVendor: 'Local Winter Market', type: 'SALE', status: 'Fulfilled', date: '2026-08-10', notes: 'Example order', items: [], totalAmount: 180.00 }
+];
+
+function App() {
+const [fbReady, setFbReady] = useState(false);
+const [user, setUser] = useState(null);
+const [activeTab, setActiveTab] = useState('dashboard');
+
+const [inventory, setInventory] = useState([]);
+const [orders, setOrders] = useState([]);
+const [loading, setLoading] = useState(true);
+
+// Filter & Modal States
+const [searchQuery, setSearchQuery] = useState('');
+const [orderSearchQuery, setOrderSearchQuery] = useState('');
+const [categoryFilter, setCategoryFilter] = useState('All');
+const [editingItem, setEditingItem] = useState(null);
+const [isItemModalOpen, setIsItemModalOpen] = useState(null);
+const [editingOrder, setEditingOrder] = useState(null);
+const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
+const [notification, setNotification] = useState(null);
+
+const showToast = (message, type = 'success') => {
+setNotification({ message, type });
+setTimeout(() => setNotification(null), 3500);
+};
+
+// 1. Wait for Firebase script to finish loading safely
+useEffect(() => {
+if (window.FB) {
+setFbReady(true);
+} else {
+const handleReady = () => setFbReady(true);
+window.addEventListener('firebase-ready', handleReady);
+return () => window.removeEventListener('firebase-ready', handleReady);
+}
+}, []);
+
+// 2. Initialize Auth once Firebase is Ready
+useEffect(() => {
+if (!fbReady) return;
+
+const initAuth = async () => {
+if (!window.FB || !window.FB.auth) {
+const savedInv = localStorage.getItem('jbd_inventory');
+const savedOrd = localStorage.getItem('jbd_orders');
+setInventory(savedInv ? JSON.parse(savedInv) : FALLBACK_INVENTORY);
+setOrders(savedOrd ? JSON.parse(savedOrd) : FALLBACK_ORDERS);
+setLoading(false);
+return;
+}
+
+const { auth, signInAnonymously, onAuthStateChanged } = window.FB;
+
+try {
+await signInAnonymously(auth);
+} catch (err) {
+console.warn("Auth fallback warning:", err);
+}
+
+onAuthStateChanged(auth, (u) => {
+setUser(u);
+});
+};
+
+initAuth();
+}, [fbReady]);
+
+// 3. Real-time Firestore Sync
+useEffect(() => {
+if (!fbReady) return;
+
+if (!window.FB || !window.FB.db) {
+setLoading(false);
+return;
+}
+
+const { db, collection, onSnapshot, query } = window.FB;
+
+const invColRef = collection(db, 'inventory');
+const ordColRef = collection(db, 'orders');
+
+const unsubInv = onSnapshot(query(invColRef),
+(snapshot) => {
+const invList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+setInventory(invList.length > 0 ? invList : []);
+setLoading(false);
+},
+(err) => {
+console.warn("Firestore Inventory error:", err);
+const savedInv = localStorage.getItem('jbd_inventory');
+setInventory(savedInv ? JSON.parse(savedInv) : FALLBACK_INVENTORY);
+setLoading(false);
+}
+);
+
+const unsubOrd = onSnapshot(query(ordColRef),
+(snapshot) => {
+const ordList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+setOrders(ordList.length > 0 ? ordList : []);
+},
+(err) => {
+console.warn("Firestore Orders error:", err);
+const savedOrd = localStorage.getItem('jbd_orders');
+setOrders(savedOrd ? JSON.parse(savedOrd) : FALLBACK_ORDERS);
+}
+);
+
+return () => {
+unsubInv();
+unsubOrd();
+};
+}, [fbReady, user]);
+
+useEffect(() => { if (inventory.length > 0) localStorage.setItem('jbd_inventory', JSON.stringify(inventory)); }, [inventory]);
+useEffect(() => { if (orders.length > 0) localStorage.setItem('jbd_orders', JSON.stringify(orders)); }, [orders]);
+
+const handleSaveItem = async (itemData) => {
+const itemId = itemData.id || inv-${Date.now()}`;
+const payload = { ...itemData, id: itemId };
+
+if (window.FB && window.FB.db) {
+const { db, doc, setDoc } = window.FB;
+const itemRef = doc(db, 'inventory', itemId);
+await setDoc(itemRef, payload, { merge: true });
+} else {
+setInventory(prev => {
+const exists = prev.some(i => i.id === itemId);
+return exists ? prev.map(i => i.id === itemId ? payload : i) : [payload, ...prev];
+});
+}
+showToast(itemData.id ? Updated "${itemData.name}":Added "${itemData.name}");
+setIsItemModalOpen(null);
+setEditingItem(null);
+};
+
+const handleQuickStockAdjust = async (itemId, delta) => {
+const targetItem = inventory.find(i => i.id === itemId);
+if (!targetItem) return;
+const newStock = Math.max(0, (targetItem.stock || 0) + delta);
+
+if (window.FB && window.FB.db) {
+const { db, doc, updateDoc } = window.FB;
+const invRef = doc(db, 'inventory', itemId);
+await updateDoc(invRef, { stock: newStock });
+} else {
+setInventory(prev => prev.map(i => i.id === itemId ? { ...i, stock: newStock } : i));
+}
+showToast(Updated stock for${targetItem.name}: ${newStock});
+};
+
+const handleDeleteItem = async (id) => {
+if (!confirm("Are you sure you want to delete this inventory item?")) return;
+if (window.FB && window.FB.db) {
+const { db, doc, deleteDoc } = window.FB;
+const itemRef = doc(db, 'inventory', id);
+await deleteDoc(itemRef);
+} else {
+setInventory(prev => prev.filter(i => i.id !== id));
+}
+showToast("Item removed", "info");
+};
+
+const revertOrderStockEffect = async (order) => {
+const isActive = order.status === 'Committed' || order.status === 'Fulfilled';
+if (!isActive) return;
+const revertMultiplier = order.type === 'SALE' ? 1 : -1;
+
+for (let line of order.items) {
+const invItem = inventory.find(i => i.id === line.itemId);
+if (invItem) {
+const revertedStock = Math.max(0, (invItem.stock || 0) + (line.qty * revertMultiplier));
+if (window.FB && window.FB.db) {
+const { db, doc, updateDoc } = window.FB;
+await updateDoc(doc(db, 'inventory', invItem.id), { stock: revertedStock });
+}
+}
+}
+};
+
+const applyOrderStockEffect = async (order) => {
+const isActive = order.status === 'Committed' || order.status === 'Fulfilled';
+if (!isActive) return;
+const applyMultiplier = order.type === 'SALE' ? -1 : 1;
+
+for (let line of order.items) {
+const invItem = inventory.find(i => i.id === line.itemId);
+if (invItem) {
+const newStock = Math.max(0, (invItem.stock || 0) + (line.qty * applyMultiplier));
+if (window.FB && window.FB.db) {
+const { db, doc, updateDoc } = window.FB;
+await updateDoc(doc(db, 'inventory', invItem.id), { stock: newStock });
+}
+}
+}
+};
+
+const handleUpdateOrderStatus = async (orderId, newStatus) => {
+const targetOrder = orders.find(o => o.id === orderId);
+if (!targetOrder || targetOrder.status === newStatus) return;
+
+await revertOrderStockEffect(targetOrder);
+const updatedOrder = { ...targetOrder, status: newStatus };
+await applyOrderStockEffect(updatedOrder);
+
+if (window.FB && window.FB.db) {
+const { db, doc, updateDoc } = window.FB;
+await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
+}
+showToast(Order status updated);
+};
+
+const handleSaveOrder = async (orderData, autoCommit = true) => {
+const orderId = orderData.id || ord-${Date.now()}; let orderNumber = orderData.orderNumber || (orderData.type === 'SALE' ?SALE-{Math.floor(1000 + Math.random() * 9000)}`);
+
+const existingOrder = orders.find(o => o.id === orderId);
+if (existingOrder) await revertOrderStockEffect(existingOrder);
+
+const finalStatus = autoCommit ? 'Fulfilled' : (orderData.status || 'Draft');
+const fullOrder = { ...orderData, id: orderId, orderNumber, status: finalStatus, date: orderData.date || new Date().toISOString().split('T')[0] };
+
+if (window.FB && window.FB.db) {
+const { db, doc, setDoc } = window.FB;
+await setDoc(doc(db, 'orders', orderId), fullOrder);
+} else {
+setOrders(prev => prev.some(o => o.id === orderId) ? prev.map(o => o.id === orderId ? fullOrder : o) : [fullOrder, ...prev]);
+}
+
+await applyOrderStockEffect(fullOrder);
+showToast(Saved transaction #${orderNumber}`);
+setEditingOrder(null);
+setActiveTab('orders');
+};
+
+const handleDeleteOrder = async (orderId) => {
+const targetOrder = orders.find(o => o.id === orderId);
+if (!targetOrder) return;
+if (!confirm(Delete${targetOrder.orderNumber}? Stock will be restored.`)) return;
+
+await revertOrderStockEffect(targetOrder);
+
+if (window.FB && window.FB.db) {
+const { db, doc, deleteDoc } = window.FB;
+await deleteDoc(doc(db, 'orders', orderId));
+} else {
+setOrders(prev => prev.filter(o => o.id !== orderId));
+}
+showToast(Deleted ${targetOrder.orderNumber}`, "info");
+};
+
+const categories = useMemo(() => ['All', ...new Set(inventory.map(i => i.category || 'General'))], [inventory]);
+const metrics = useMemo(() => {
+const totalStockItems = inventory.reduce((acc, i) => acc + (Number(i.stock) || 0), 0);
+const totalInventoryValuationCost = inventory.reduce((acc, i) => acc + ((Number(i.stock) || 0) * (Number(i.unitCost) || 0)), 0);
+const lowStockCount = inventory.filter(i => i.stock <= (i.reorderPoint || 5)).length;
+
+const totalSalesRevenue = orders.filter(o => o.type === 'SALE' && o.status !== 'Cancelled').reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+const totalCOGSSold = orders.filter(o => o.type === 'SALE' && o.status !== 'Cancelled').reduce((acc, o) => acc + (o.items || []).reduce((s, item) => s + ((item.unitCost || 0) * item.qty), 0), 0);
+const netRealizedProfit = totalSalesRevenue - totalCOGSSold;
+
+return { totalStockItems, totalInventoryValuationCost, lowStockCount, totalSalesRevenue, netRealizedProfit };
+}, [inventory, orders]);
+
+if (loading) {
+return (
+<div className="min-h-screen flex items-center justify-center bg-slate-900 text-white font-sans p-4">
+<div className="text-center space-y-3">
+<div className="inline-block animate-spin text-3xl text-indigo-500"><i className="fa-solid fa-circle-notch"></i></div>
+<h2 className="text-xl font-bold">Connecting React Interface...</h2>
+</div>
+</div>
+);
+}
+
+return (
+<div className="min-h-screen flex flex-col md:flex-row">
+{notification && (
+<div className={fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2${notification.type === 'info' ? 'bg-blue-600' : 'bg-emerald-600'}`}>
+<i className="fa-solid fa-circle-check"></i> {notification.message}
+</div>
+)}
+
+<aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between no-print shrink-0">
+<div>
+<div className="p-5 border-b border-slate-800">
+<div className="flex items-center gap-3">
+<div className="bg-gradient-to-tr from-indigo-500 to-emerald-400 p-2.5 rounded-xl text-white font-bold text-lg">JB</div>
+<div>
+<h1 className="font-bold text-white text-base leading-tight">JBD & JESSA</h1>
+<p className="text-xs text-slate-400">Inventory & PO App</p>
+</div>
+</div>
+</div>
+<nav className="p-3 space-y-1">
+<button onClick={() => { setActiveTab('dashboard'); setEditingOrder(null); }} className={w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400'}}&gt;&lt;i className="fa-solid fa-chart-pie w-5"&gt;&lt;/i&gt; Dashboard&lt;/button&gt; &lt;button onClick={() =&gt; { setActiveTab('inventory'); setEditingOrder(null); }} className={w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'inventory' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400'}}><i className="fa-solid fa-boxes-stacked w-5"></i> Inventory & Profit {metrics.lowStockCount > 0 && <span className="ml-auto bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-semibold">{metrics.lowStockCount}</span>}</button>
+<button onClick={() => { setActiveTab('orders'); setEditingOrder(null); }} className={w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'orders' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400'}}&gt;&lt;i className="fa-solid fa-receipt w-5"&gt;&lt;/i&gt; Orders & POs&lt;/button&gt; &lt;button onClick={() =&gt; { setEditingOrder(null); setActiveTab('new-order'); }} className={w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'new-order' && !editingOrder ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-emerald-400'}}><i className="fa-solid fa-plus-circle w-5"></i> New Order / Sale</button>
+</nav>
+</div>
+<div className="p-4 m-3 bg-slate-800/60 rounded-xl border border-slate-700/50 text-xs">
+<div className="flex justify-between text-slate-400 mb-1"><span>Realized Revenue:</span><span className="font-semibold text-emerald-400">{metrics.netRealizedProfit.toFixed(2)}</span></div>
+</div>
+</aside>
+
+<main className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto min-h-screen">
+
+{activeTab === 'dashboard' && (
+<div className="space-y-6 max-w-7xl mx-auto">
+<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div><h2 className="text-2xl font-bold text-slate-900">Unified Business Dashboard</h2><p className="text-slate-500 text-sm">Real-time sync between JBD Inventory and JESSA POs</p></div>
+<button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm shadow-sm transition"><i className="fa-solid fa-cart-plus"></i> Create New Transaction</button>
+</div>
+
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><div className="text-xs font-semibold text-slate-500 uppercase">Sales Revenue</div><div className="text-2xl font-bold text-slate-900 mt-2">{metrics.netRealizedProfit.toFixed(2)}</div></div>
+<div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><div className="text-xs font-semibold text-slate-500 uppercase">Inventory Value (Cost)</div><div className="text-2xl font-bold text-slate-900 mt-2">$`{metrics.totalInventoryValuationCost.toFixed(2)}</div></div>
+<div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><div className="text-xs font-semibold text-slate-500 uppercase">Low Stock Alerts</div><div className="text-2xl font-bold text-amber-600 mt-2">{metrics.lowStockCount}</div></div>
+</div>
+
+{metrics.lowStockCount > 0 && (
+<div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5">
+<div className="flex items-center justify-between mb-3">
+<div className="flex items-center gap-2 text-amber-800 font-semibold"><i className="fa-solid fa-triangle-exclamation"></i>Attention Needed: Reorder Stock</div>
+<button onClick={() => setActiveTab('inventory')} className="text-xs text-amber-800 hover:text-amber-900 font-semibold underline">Manage Inventory</button>
+</div>
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-43">
+{inventory.filter(i => i.stock <= (i.reorderPoint || 5)).map(item => (
+<div key={item.id} className="bg-white p-3 rounded-lg border border-amber-200 shadow-sm flex items-center justify-between">
+<div><div className="font-semibold text-sm text-slate-800">{item.name}</div><div className="text-xs text-slate-400">SKU: {item.sku}</div></div>
+<div className="text-right flex items-center gap-2">
+<span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-xs">{item.stock} left</span>
+<button onClick={() => handleQuickStockAdjust(item.id, 10)} className="text-xs bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 px-2 py-1 rounded font-bold">+10</button>
+</div>
+</div>
+))}
+</div>
+</div>
+)}
+</div>
+)}
+
+{activeTab === 'inventory' && (
+<div className="space-y-6 max-w-7xl mx-auto">
+<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div><h2 className="text-2xl font-bold text-slate-900">Stock & Profit Tracker</h2></div>
+<button onClick={() => { setEditingItem({}); setIsItemModalOpen('create'); }} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm">+ Add Item</button>
+</div>
+<div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
+<input type="text" placeholder="Search SKU, Name..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+<select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full md:w-48 px-3 py-2 bg-slate-50 border rounded-lg text-sm">
+{categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+</select>
+</div>
+<div className="bg-white rounded-xl border shadow-sm overflow-hidden overflow-x-auto">
+<table className="w-full text-left text-sm">
+<thead className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase">
+<tr><th className="p-4">SKU / Name</th><th className="p-4 text-center">Stock</th><th className="p-4 text-right">Cost</th><th className="p-4 text-right">Price</th><th className="p-4 text-right">Margin</th><th className="p-4 text-center">Actions</th></tr>
+</thead>
+<tbody className="divide-y divide-slate-100">
+{inventory.filter(item => (item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.sku.toLowerCase().includes(searchQuery.toLowerCase())) && (categoryFilter === 'All' || item.category === categoryFilter)).map(item => (
+<tr key={item.id} className="hover:bg-slate-50">
+<td className="p-4"><div className="font-bold">{item.name}</div><div className="text-xs text-slate-400">{item.sku}</div></td>
+<td className="p-4 text-center">
+<div className="inline-flex items-center gap-2">
+<button onClick={() => handleQuickStockAdjust(item.id, -1)} className="w-6 h-6 border bg-white rounded font-bold">-</button>
+<span className="font-bold w-6">{item.stock}</span>
+<button onClick={() => handleQuickStockAdjust(item.id, 1)} className="w-6 h-6 border bg-white rounded font-bold">+</button>
+</div>
+</td>
+<td className="p-4 text-right">${Number(item.unitCost).toFixed(2)}&lt;/td&gt; &lt;td className="p-4 text-right font-bold"&gt;${Number(item.sellingPrice).toFixed(2)}</td>
+<td className="p-4 text-right text-emerald-600 font-bold">`${(item.sellingPrice - item.unitCost).toFixed(2)}</td>
+<td className="p-4 text-center">
+<button onClick={() => { setEditingItem(item); setIsItemModalOpen('edit'); }} className="p-1.5 text-indigo-600"><i className="fa-solid fa-pen"></i></button>
+<button onClick={() => handleDeleteItem(item.id)} className="p-1.5 text-rose-600"><i className="fa-solid fa-trash"></i></button>
+</td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
+</div>
+)}
+
+{activeTab === 'orders' && (
+<div className="space-y-6 max-w-7xl mx-auto">
+<div className="flex justify-between items-center">
+<h2 className="text-2xl font-bold text-slate-900">Orders & POs</h2>
+<button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className="bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold">+ Create</button>
+</div>
+<div className="space-y-4">
+{orders.map(order => (
+<div key={order.id} className="bg-white rounded-xl border p-5 shadow-sm">
+<div className="flex justify-between items-center border-b pb-3 mb-3">
+<div><h3 className="font-bold">{order.orderNumber} ({order.type})</h3><p className="text-xs text-slate-500">{order.customerOrVendor} • {order.date}</p></div>
+<div className="flex gap-2">
+<select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} className="text-xs border px-2 py-1 rounded">
+<option value="Draft">Draft</option><option value="Committed">Committed</option><option value="Fulfilled">Fulfilled</option><option value="Cancelled">Cancelled</option>
+</select>
+<button onClick={() => { setEditingOrder(order); setActiveTab('new-order'); }} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded">Edit</button>
+<button onClick={() => handleDeleteOrder(order.id)} className="px-3 py-1 bg-rose-50 text-rose-700 text-xs rounded">Delete</button>
+</div>
+</div>
+<div className="bg-slate-50 p-3 rounded text-xs">
+{order.items.map((line, idx) => <div key={idx} className="flex justify-between"><span>{line.name} x{line.qty}</span><span className="font-bold">latex
+{(line.qty * line.unitPrice).toFixed(2)}&lt;/span&gt;&lt;/div&gt;)} &lt;/div&gt; &lt;div className="text-right font-bold mt-2"&gt;Total: 
+
+{order.totalAmount.toFixed(2)}</div>
+</div>
+))}
+</div>
+</div>
+)}
+
+{activeTab === 'new-order' && (
+<NewOrEditOrderForm existingOrder={editingOrder} inventory={inventory} onSubmitOrder={handleSaveOrder} onCancel={() => { setEditingOrder(null); setActiveTab('orders'); }} />
+)}
+</main>
+
+{isItemModalOpen && <InventoryModal item={editingItem} onClose={() => setIsItemModalOpen(null)} onSave={handleSaveItem} />}
+</div>
+);
+}
+
+function NewOrEditOrderForm({ existingOrder, inventory, onSubmitOrder, onCancel }) {
+const [orderType, setOrderType] = useState(existingOrder?.type || 'SALE');
+const [customerOrVendor, setCustomerOrVendor] = useState(existingOrder?.customerOrVendor || '');
+const [notes, setNotes] = useState(existingOrder?.notes || '');
+const [cart, setCart] = useState(existingOrder?.items || []);
+
+const handleAddToCart = (item) => {
+const existing = cart.find(c => c.itemId === item.id);
+if (existing) setCart(cart.map(c => c.itemId === item.id ? { ...c, qty: c.qty + 1 } : c));
+else setCart([...cart, { itemId: item.id, sku: item.sku, name: item.name, qty: 1, unitPrice: orderType === 'SALE' ? item.sellingPrice : item.unitCost, unitCost: item.unitCost }]);
+};
+const handleUpdateQty = (id, qty) => setCart(cart.map(c => c.itemId === id ? { ...c, qty: Math.max(1, Number(qty)) } : c));
+const totalAmount = cart.reduce((sum, i) => sum + (i.qty * i.unitPrice), 0);
+
+const handleSubmit = (commit) => {
+if (!customerOrVendor) return alert("Enter customer/vendor");
+onSubmitOrder({ id: existingOrder?.id, orderNumber: existingOrder?.orderNumber, type: orderType, customerOrVendor, notes, items: cart, totalAmount, status: existingOrder?.status || 'Draft' }, commit);
+};
+
+return (
+<div className="bg-white rounded-xl border p-6 space-y-6 max-w-4xl mx-auto">
+<h2 className="text-xl font-bold">{existingOrder ? 'Edit Transaction' : 'New Transaction'}</h2>
+<div className="flex gap-2">
+<button onClick={() => setOrderType('SALE')} className={px-4 py-2 rounded text-sm font-bold ${orderType === 'SALE' ? 'bg-emerald-600 text-white' : 'bg-slate-100'}}&gt;SALE (Deduct Stock)&lt;/button&gt; &lt;button onClick={() =&gt; setOrderType('PURCHASE')} className={px-4 py-2 rounded text-sm font-bold ${orderType === 'PURCHASE' ? 'bg-blue-600 text-white' : 'bg-slate-100'}}>PO (Add Stock)</button>
+</div>
+<input type="text" placeholder="Customer or Vendor Name" value={customerOrVendor} onChange={e => setCustomerOrVendor(e.target.value)} className="w-full p-2 border rounded" />
+
+<div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-slate-50 border rounded max-h-48 overflow-y-auto">
+{inventory.map(item => (
+<button key={item.id} onClick={() => handleAddToCart(item)} className="p-2 bg-white border rounded text-left text-xs font-bold hover:border-indigo-500">{item.name} (Stock: {item.stock})</button>
+))}
+</div>
+
+<div className="border rounded p-2">
+{cart.map(line => (
+<div key={line.itemId} className="flex justify-between items-center py-2 border-b text-sm">
+<span className="font-bold">{line.name}</span>
+<div className="flex items-center gap-2">
+Qty: <input type="number" value={line.qty} onChange={e => handleUpdateQty(line.itemId, e.target.value)} className="w-16 p-1 border rounded text-center" />
+<button onClick={() => setCart(cart.filter(c => c.itemId !== line.itemId))} className="text-rose-600 px-2">X</button>
+</div>
+</div>
+))}
+<div className="text-right font-bold pt-2 text-lg">Total: $`{totalAmount.toFixed(2)}</div>
+</div>
+<div className="flex justify-end gap-2">
+<button onClick={onCancel} className="px-4 py-2 bg-slate-200 rounded font-bold">Cancel</button>
+<button onClick={() => handleSubmit(true)} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold">Save & Sync</button>
+</div>
+</div>
+);
+}
+
+function InventoryModal({ item, onClose, onSave }) {
+const [form, setForm] = useState({ id: item?.id || '', sku: item?.sku || '', name: item?.name || '', category: item?.category || 'General', stock: item?.stock || 0, reorderPoint: item?.reorderPoint || 5, unitCost: item?.unitCost || 0, sellingPrice: item?.sellingPrice || 0 });
+return (
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+<div className="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
+<h3 className="font-bold">{item?.id ? 'Edit Item' : 'New Item'}</h3>
+<input type="text" placeholder="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-2 border rounded" />
+<div className="grid grid-cols-2 gap-2">
+<input type="text" placeholder="SKU" value={form.sku} onChange={e => setForm({...form, sku: e.target.value})} className="w-full p-2 border rounded" />
+<input type="text" placeholder="Category" value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full p-2 border rounded" />
+<input type="number" placeholder="Stock" value={form.stock} onChange={e => setForm({...form, stock: Number(e.target.value)})} className="w-full p-2 border rounded" />
+<input type="number" placeholder="Cost `$" step="0.01" value={form.unitCost} onChange={e => setForm({...form, unitCost: Number(e.target.value)})} className="w-full p-2 border rounded" />
+<input type="number" placeholder="Price $" step="0.01" value={form.sellingPrice} onChange={e => setForm({...form, sellingPrice: Number(e.target.value)})} className="w-full p-2 border rounded" />
+</div>
+<div className="flex justify-end gap-2 pt-4">
+<button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
+<button onClick={() => onSave(form)} className="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+</div>
+</div>
+</div>
+);
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
 </body>
 </html>
