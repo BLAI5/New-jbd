@@ -87,6 +87,7 @@ window.dispatchEvent(new Event('firebase-ready'));
 
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useMemo, useCallback } = React;
+try {
 
 function useFirebase() {
 const [fbReady, setFbReady] = useState(!!window.FB || window.FB === null);
@@ -639,6 +640,15 @@ return (
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
 document.getElementById('root').setAttribute('data-app-mounted', 'true');
+} catch (err) {
+console.error("App init failed:", err);
+var root2 = document.getElementById('root');
+if (root2) {
+root2.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
+'<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">App failed to start</h2>' +
+'<p style="white-space:pre-wrap;">' + (err && err.stack ? err.stack : String(err)) + '</p></div></div>';
+}
+}
 </script>
 </body>
 </html>
