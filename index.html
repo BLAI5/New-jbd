@@ -14,6 +14,25 @@
 :root{ box-sizing:border-box; }
 body{ font-family:'Inter',sans-serif, system-ui; margin:0; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
 </style>
+<script>
+window.addEventListener('error', function (e) {
+var root = document.getElementById('root');
+if (root) {
+root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
+'<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">Something failed to load</h2>' +
+'<p style="white-space:pre-wrap;">' + (e.message || 'Unknown error') + '</p>' +
+'<p style="color:#94a3b8;font-size:12px;">' + (e.filename ? e.filename + ':' + e.lineno : '') + '</p></div></div>';
+}
+});
+window.addEventListener('unhandledrejection', function (e) {
+var root = document.getElementById('root');
+if (root && !root.querySelector('[data-app-mounted]')) {
+root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
+'<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">A background task failed</h2>' +
+'<p style="white-space:pre-wrap;">' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)) + '</p></div></div>';
+}
+});
+</script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 <div id="root">
@@ -483,7 +502,7 @@ const errorMessages = {
 'auth/invalid-credential': 'Incorrect email or password.',
 'auth/email-already-in-use': 'An account already exists — try signing in instead.',
 'auth/weak-password': 'Password should be at least 6 characters.',
-'auth/operation-not-allowed': 'Email/password sign-in isn't enabled — turn it on in Firebase Console → Authentication → Sign-in method.',
+'auth/operation-not-allowed': 'Email/password sign-in is not enabled yet — turn it on in Firebase Console, Authentication, Sign-in method.',
 };
 
 return (
@@ -615,6 +634,7 @@ return (
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+document.getElementById('root').setAttribute('data-app-mounted', 'true');
 </script>
 </body>
 </html>
