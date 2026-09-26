@@ -489,7 +489,7 @@ function App() {
         )}
       </main>
 
-      {itemModalOpen && <InventoryModal item={editingItem} onClose={() => { setItemModalOpen(false); setEditingItem(null); }} onSave={saveItem} />}
+      {itemModalOpen && <InventoryModal item={editingItem} inventory={inventory} onClose={() => { setItemModalOpen(false); setEditingItem(null); }} onSave={saveItem} />}
     </div>
   );
 }
@@ -629,7 +629,11 @@ function Field({ label, children }) {
   );
 }
 
-function InventoryModal({ item, onClose, onSave }) {
+function InventoryModal({ item, inventory, onClose, onSave }) {
+  const existingNames = useMemo(
+    () => [...new Set((inventory || []).map(i => i.name).filter(Boolean))],
+    [inventory]
+  );
   const [form, setForm] = useState({
     id: item?.id || '', sku: item?.sku || '', name: item?.name || '',
     size: item?.size || '', color: item?.color || '',
@@ -654,7 +658,10 @@ function InventoryModal({ item, onClose, onSave }) {
       <div className="bg-white p-6 rounded-xl w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
         <h3 className="font-bold">{item ? 'Edit Item' : 'New Item'}</h3>
         <Field label="Name">
-          <input type="text" value={form.name} onChange={e => set('name', e.target.value)} className="w-full p-2 border rounded" />
+          <input type="text" list="item-name-options" value={form.name} onChange={e => set('name', e.target.value)} className="w-full p-2 border rounded" />
+          <datalist id="item-name-options">
+            {existingNames.map(n => <option key={n} value={n} />)}
+          </datalist>
         </Field>
         <Field label="SKU #">
           <input type="text" value={form.sku} onChange={e => set('sku', e.target.value)} className="w-full p-2 border rounded" />
