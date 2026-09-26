@@ -16,71 +16,71 @@ body{ font-family:'Inter',sans-serif, system-ui; margin:0; padding-top:env(safe-
 </style>
 <script>
 window.addEventListener('error', function (e) {
-var root = document.getElementById('root');
-if (root) {
-var detail = (e.error && e.error.stack) ? e.error.stack : (e.message || 'Unknown error');
-if (detail === 'Script error.' || detail === 'Script error') {
-detail = 'Script error (no details — likely a CORS-blocked script). Check that every <script> tag loading from a CDN has crossorigin="anonymous" and that the CDN serves Access-Control-Allow-Origin.';
-}
-root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
-'<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">Something failed to load</h2>' +
-'<p style="white-space:pre-wrap;">' + detail + '</p>' +
-'<p style="color:#94a3b8;font-size:12px;">' + (e.filename ? e.filename + ':' + e.lineno : '') + '</p></div></div>';
-}
+  var root = document.getElementById('root');
+  if (root) {
+    var detail = (e.error && e.error.stack) ? e.error.stack : (e.message || 'Unknown error');
+    if (detail === 'Script error.' || detail === 'Script error') {
+      detail = 'Script error (no details — likely a CORS-blocked script). Check that every <script> tag loading from a CDN has crossorigin="anonymous" and that the CDN serves Access-Control-Allow-Origin.';
+    }
+    root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
+      '<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">Something failed to load</h2>' +
+      '<p style="white-space:pre-wrap;">' + detail + '</p>' +
+      '<p style="color:#94a3b8;font-size:12px;">' + (e.filename ? e.filename + ':' + e.lineno : '') + '</p></div></div>';
+  }
 });
 window.addEventListener('unhandledrejection', function (e) {
-var root = document.getElementById('root');
-if (root && !root.querySelector('[data-app-mounted]')) {
-root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
-'<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">A background task failed</h2>' +
-'<p style="white-space:pre-wrap;">' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)) + '</p></div></div>';
-}
+  var root = document.getElementById('root');
+  if (root && !root.querySelector('[data-app-mounted]')) {
+    root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
+      '<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">A background task failed</h2>' +
+      '<p style="white-space:pre-wrap;">' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)) + '</p></div></div>';
+  }
 });
 </script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 <div id="root">
-<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
-<div class="text-center space-y-3">
-<i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500"></i>
-<h2 class="text-xl font-bold">Loading JBD & JESSA Tracker...</h2>
-<p class="text-xs text-slate-400">Connecting to Firebase...</p>
-</div>
-</div>
+  <div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
+    <div class="text-center space-y-3">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500"></i>
+      <h2 class="text-xl font-bold">Loading JBD & JESSA Tracker...</h2>
+      <p class="text-xs text-slate-400">Connecting to Firebase...</p>
+    </div>
+  </div>
 </div>
 
 <!-- Firebase (modular SDK) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
-getAuth, onAuthStateChanged,
-signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut
+  getAuth, onAuthStateChanged,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
-getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query
+  getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyAGuV3oqPzHKoB0-p9S7oFDpLYHL88c9OE",
-authDomain: "order-tracker-91a03.firebaseapp.com",
-projectId: "order-tracker-91a03",
-storageBucket: "order-tracker-91a03.firebasestorage.app",
-messagingSenderId: "386523526590",
-appId: "1:386523526590:web:02d418b4a829735edc35ef",
-measurementId: "G-448JDYKFKH"
+  apiKey: "AIzaSyAGuV3oqPzHKoB0-p9S7oFDpLYHL88c9OE",
+  authDomain: "order-tracker-91a03.firebaseapp.com",
+  projectId: "order-tracker-91a03",
+  storageBucket: "order-tracker-91a03.firebasestorage.app",
+  messagingSenderId: "386523526590",
+  appId: "1:386523526590:web:02d418b4a829735edc35ef",
+  measurementId: "G-448JDYKFKH"
 };
 
 try {
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-window.FB = {
-auth, db, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
-collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query
-};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  window.FB = {
+    auth, db, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
+    collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query
+  };
 } catch (e) {
-console.error("Firebase init failed:", e);
-window.FB = null;
+  console.error("Firebase init failed:", e);
+  window.FB = null;
 }
 window.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -90,575 +90,607 @@ const { useState, useEffect, useMemo, useCallback } = React;
 try {
 
 function useFirebase() {
-const [fbReady, setFbReady] = useState(!!window.FB || window.FB === null);
-const [authError, setAuthError] = useState(null);
-const [user, setUser] = useState(null);
-const [authChecked, setAuthChecked] = useState(false);
+  const [fbReady, setFbReady] = useState(!!window.FB || window.FB === null);
+  const [authError, setAuthError] = useState(null);
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-useEffect(() => {
-if (window.FB || window.FB === null) { setFbReady(true); return; }
-const onReady = () => setFbReady(true);
-window.addEventListener('firebase-ready', onReady);
-const timeout = setTimeout(() => {
-console.error("Firebase script never signaled ready — it likely failed to load (network/ad-block) or threw before dispatching the event.");
-setFbReady(true);
-}, 8000);
-return () => { window.removeEventListener('firebase-ready', onReady); clearTimeout(timeout); };
-}, []);
+  useEffect(() => {
+    if (window.FB || window.FB === null) { setFbReady(true); return; }
+    const onReady = () => setFbReady(true);
+    window.addEventListener('firebase-ready', onReady);
+    const timeout = setTimeout(() => {
+      console.error("Firebase script never signaled ready — it likely failed to load (network/ad-block) or threw before dispatching the event.");
+      setFbReady(true);
+    }, 8000);
+    return () => { window.removeEventListener('firebase-ready', onReady); clearTimeout(timeout); };
+  }, []);
 
-useEffect(() => {
-if (!fbReady || !window.FB) return;
-const { auth, onAuthStateChanged } = window.FB;
-const unsub = onAuthStateChanged(auth, (u) => { setUser(u); setAuthChecked(true); });
-return () => unsub();
-}, [fbReady]);
+  useEffect(() => {
+    if (!fbReady || !window.FB) return;
+    const { auth, onAuthStateChanged } = window.FB;
+    const unsub = onAuthStateChanged(auth, (u) => { setUser(u); setAuthChecked(true); });
+    return () => unsub();
+  }, [fbReady]);
 
-const signIn = useCallback(async (email, password) => {
-if (!window.FB) return;
-setAuthError(null);
-try {
-await window.FB.signInWithEmailAndPassword(window.FB.auth, email, password);
-} catch (err) {
-setAuthError(err.code || err.message || "auth-failed");
-}
-}, []);
+  const signIn = useCallback(async (email, password) => {
+    if (!window.FB) return;
+    setAuthError(null);
+    try {
+      await window.FB.signInWithEmailAndPassword(window.FB.auth, email, password);
+    } catch (err) {
+      setAuthError(err.code || err.message || "auth-failed");
+    }
+  }, []);
 
-const signUp = useCallback(async (email, password) => {
-if (!window.FB) return;
-setAuthError(null);
-try {
-await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, password);
-} catch (err) {
-setAuthError(err.code || err.message || "auth-failed");
-}
-}, []);
+  const signUp = useCallback(async (email, password) => {
+    if (!window.FB) return;
+    setAuthError(null);
+    try {
+      await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, password);
+    } catch (err) {
+      setAuthError(err.code || err.message || "auth-failed");
+    }
+  }, []);
 
-const signOutUser = useCallback(async () => {
-if (!window.FB) return;
-await window.FB.signOut(window.FB.auth);
-}, []);
+  const signOutUser = useCallback(async () => {
+    if (!window.FB) return;
+    await window.FB.signOut(window.FB.auth);
+  }, []);
 
-return { ready: fbReady, connected: !!window.FB, user, authChecked, authError, signIn, signUp, signOutUser };
+  return { ready: fbReady, connected: !!window.FB, user, authChecked, authError, signIn, signUp, signOutUser };
 }
 
 function useCollection(active, path) {
-const [items, setItems] = useState([]);
-const [ready, setReady] = useState(false);
-const [error, setError] = useState(null);
-useEffect(() => {
-if (!active || !window.FB) { setReady(true); return; }
-const { db, collection, onSnapshot, query } = window.FB;
-const unsub = onSnapshot(query(collection(db, path)),
-(snap) => {
-setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-setReady(true);
-setError(null);
-},
-(err) => {
-console.warn(path, "snapshot error", err);
-setError(err.code || "unknown");
-setReady(true);
-}
-);
-return () => unsub();
-}, [active, path]);
-return [items, ready, error];
+  const [items, setItems] = useState([]);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    if (!active || !window.FB) { setReady(true); return; }
+    const { db, collection, onSnapshot, query } = window.FB;
+    const unsub = onSnapshot(query(collection(db, path)),
+      (snap) => {
+        setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setReady(true);
+        setError(null);
+      },
+      (err) => {
+        console.warn(path, "snapshot error", err);
+        setError(err.code || "unknown");
+        setReady(true);
+      }
+    );
+    return () => unsub();
+  }, [active, path]);
+  return [items, ready, error];
 }
 
-function fmt(n) { return "$`" + (Number(n) || 0).toFixed(2); }
+function fmt(n) { return "$" + (Number(n) || 0).toFixed(2); }
 function uid(prefix) { return prefix + "-" + Date.now() + "-" + Math.floor(Math.random() * 1000); }
 
 function App() {
-const { ready: fbReady, connected, user, authChecked, authError, signIn, signUp, signOutUser } = useFirebase();
-const collectionsActive = fbReady && connected && !!user;
-const [inventory, invReady, invError] = useCollection(collectionsActive, "inventory");
-const [orders, ordReady, ordError] = useCollection(collectionsActive, "orders");
-const loading = !fbReady || (collectionsActive && (!invReady || !ordReady));
+  const { ready: fbReady, connected, user, authChecked, authError, signIn, signUp, signOutUser } = useFirebase();
+  const collectionsActive = fbReady && connected && !!user;
+  const [inventory, invReady, invError] = useCollection(collectionsActive, "inventory");
+  const [orders, ordReady, ordError] = useCollection(collectionsActive, "orders");
+  const loading = !fbReady || (collectionsActive && (!invReady || !ordReady));
 
-const [activeTab, setActiveTab] = useState('dashboard');
-const [searchQuery, setSearchQuery] = useState('');
-const [categoryFilter, setCategoryFilter] = useState('All');
-const [editingItem, setEditingItem] = useState(null);
-const [itemModalOpen, setItemModalOpen] = useState(false);
-const [editingOrder, setEditingOrder] = useState(null);
-const [toast, setToast] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [editingItem, setEditingItem] = useState(null);
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [toast, setToast] = useState(null);
 
-const showToast = (message, type = 'success') => {
-setToast({ message, type });
-setTimeout(() => setToast(null), 3000);
-};
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
-const canWrite = collectionsActive;
-const permissionIssue = invError === 'permission-denied' || ordError === 'permission-denied';
+  const canWrite = collectionsActive;
+  const permissionIssue = invError === 'permission-denied' || ordError === 'permission-denied';
 
-const saveItem = useCallback(async (item) => {
-if (!canWrite) { showToast("Not connected — changes won't be saved.", "info"); return; }
-const { db, doc, setDoc } = window.FB;
-const id = item.id || uid('inv');
-await setDoc(doc(db, 'inventory', id), { ...item, id }, { merge: true });
-showToast(item.id ? ('Updated "' + item.name + '"') : ('Added "' + item.name + '"'));
-setItemModalOpen(false);
-setEditingItem(null);
-}, [canWrite]);
+  const saveItem = useCallback(async (item) => {
+    if (!canWrite) { showToast("Not connected — changes won't be saved.", "info"); return; }
+    const { db, doc, setDoc } = window.FB;
+    const id = item.id || uid('inv');
+    await setDoc(doc(db, 'inventory', id), { ...item, id }, { merge: true });
+    showToast(item.id ? ('Updated "' + item.name + '"') : ('Added "' + item.name + '"'));
+    setItemModalOpen(false);
+    setEditingItem(null);
+  }, [canWrite]);
 
-const adjustStock = useCallback(async (itemId, delta) => {
-if (!canWrite) return;
-const target = inventory.find(i => i.id === itemId);
-if (!target) return;
-const newStock = Math.max(0, (Number(target.stock) || 0) + delta);
-const { db, doc, updateDoc } = window.FB;
-await updateDoc(doc(db, 'inventory', itemId), { stock: newStock });
-}, [canWrite, inventory]);
+  const adjustStock = useCallback(async (itemId, delta) => {
+    if (!canWrite) return;
+    const target = inventory.find(i => i.id === itemId);
+    if (!target) return;
+    const newStock = Math.max(0, (Number(target.stock) || 0) + delta);
+    const { db, doc, updateDoc } = window.FB;
+    await updateDoc(doc(db, 'inventory', itemId), { stock: newStock });
+  }, [canWrite, inventory]);
 
-const deleteItem = useCallback(async (id) => {
-if (!canWrite) return;
-if (!confirm("Delete this inventory item?")) return;
-const { db, doc, deleteDoc } = window.FB;
-await deleteDoc(doc(db, 'inventory', id));
-showToast("Item removed", "info");
-}, [canWrite]);
+  const deleteItem = useCallback(async (id) => {
+    if (!canWrite) return;
+    if (!confirm("Delete this inventory item?")) return;
+    const { db, doc, deleteDoc } = window.FB;
+    await deleteDoc(doc(db, 'inventory', id));
+    showToast("Item removed", "info");
+  }, [canWrite]);
 
-const applyStockEffect = useCallback(async (order, sign) => {
-const active = order.status === 'Committed' || order.status === 'Fulfilled';
-if (!active || !canWrite) return;
-const { db, doc, updateDoc } = window.FB;
-const typeMultiplier = order.type === 'SALE' ? -1 : 1;
-for (const line of (order.items || [])) {
-const invItem = inventory.find(i => i.id === line.itemId);
-if (!invItem) continue;
-const delta = line.qty * typeMultiplier * sign;
-const newStock = Math.max(0, (Number(invItem.stock) || 0) + delta);
-await updateDoc(doc(db, 'inventory', invItem.id), { stock: newStock });
-}
-}, [canWrite, inventory]);
+  const applyStockEffect = useCallback(async (order, sign) => {
+    const active = order.status === 'Committed' || order.status === 'Fulfilled';
+    if (!active || !canWrite) return;
+    const { db, doc, updateDoc } = window.FB;
+    const typeMultiplier = order.type === 'SALE' ? -1 : 1;
+    for (const line of (order.items || [])) {
+      const invItem = inventory.find(i => i.id === line.itemId);
+      if (!invItem) continue;
+      const delta = line.qty * typeMultiplier * sign;
+      const newStock = Math.max(0, (Number(invItem.stock) || 0) + delta);
+      await updateDoc(doc(db, 'inventory', invItem.id), { stock: newStock });
+    }
+  }, [canWrite, inventory]);
 
-const saveOrder = useCallback(async (orderData, commit) => {
-if (!canWrite) { showToast("Not connected — changes won't be saved.", "info"); return; }
-const { db, doc, setDoc } = window.FB;
-const existing = orders.find(o => o.id === orderData.id);
-if (existing) await applyStockEffect(existing, -1);
+  const saveOrder = useCallback(async (orderData, commit) => {
+    if (!canWrite) { showToast("Not connected — changes won't be saved.", "info"); return; }
+    const { db, doc, setDoc } = window.FB;
+    const existing = orders.find(o => o.id === orderData.id);
+    if (existing) await applyStockEffect(existing, -1);
 
-const id = orderData.id || uid('ord');
-const orderNumber = orderData.orderNumber || (orderData.type === 'SALE'
-? ('SALE-' + Math.floor(1000 + Math.random() * 9000))
-: ('PO-' + Math.floor(1000 + Math.random() * 9000)));
-const status = commit ? 'Fulfilled' : (orderData.status || 'Draft');
-const full = { ...orderData, id, orderNumber, status, date: orderData.date || new Date().toISOString().slice(0, 10) };
+    const id = orderData.id || uid('ord');
+    const orderNumber = orderData.orderNumber || (orderData.type === 'SALE'
+      ? ('SALE-' + Math.floor(1000 + Math.random() * 9000))
+      : ('PO-' + Math.floor(1000 + Math.random() * 9000)));
+    const status = commit ? 'Fulfilled' : (orderData.status || 'Draft');
+    const full = { ...orderData, id, orderNumber, status, date: orderData.date || new Date().toISOString().slice(0, 10) };
 
-await setDoc(doc(db, 'orders', id), full);
-await applyStockEffect(full, 1);
-showToast('Saved ' + orderNumber);
-setEditingOrder(null);
-setActiveTab('orders');
-}, [canWrite, orders, applyStockEffect]);
+    await setDoc(doc(db, 'orders', id), full);
+    await applyStockEffect(full, 1);
+    showToast('Saved ' + orderNumber);
+    setEditingOrder(null);
+    setActiveTab('orders');
+  }, [canWrite, orders, applyStockEffect]);
 
-const updateOrderStatus = useCallback(async (orderId, newStatus) => {
-if (!canWrite) return;
-const target = orders.find(o => o.id === orderId);
-if (!target || target.status === newStatus) return;
-await applyStockEffect(target, -1);
-const updated = { ...target, status: newStatus };
-await applyStockEffect(updated, 1);
-const { db, doc, updateDoc } = window.FB;
-await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
-showToast("Order status updated");
-}, [canWrite, orders, applyStockEffect]);
+  const updateOrderStatus = useCallback(async (orderId, newStatus) => {
+    if (!canWrite) return;
+    const target = orders.find(o => o.id === orderId);
+    if (!target || target.status === newStatus) return;
+    await applyStockEffect(target, -1);
+    const updated = { ...target, status: newStatus };
+    await applyStockEffect(updated, 1);
+    const { db, doc, updateDoc } = window.FB;
+    await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
+    showToast("Order status updated");
+  }, [canWrite, orders, applyStockEffect]);
 
-const deleteOrder = useCallback(async (orderId) => {
-if (!canWrite) return;
-const target = orders.find(o => o.id === orderId);
-if (!target) return;
-if (!confirm('Delete ' + target.orderNumber + '? Stock will be restored.')) return;
-await applyStockEffect(target, -1);
-const { db, doc, deleteDoc } = window.FB;
-await deleteDoc(doc(db, 'orders', orderId));
-showToast('Deleted ' + target.orderNumber, "info");
-}, [canWrite, orders, applyStockEffect]);
+  const deleteOrder = useCallback(async (orderId) => {
+    if (!canWrite) return;
+    const target = orders.find(o => o.id === orderId);
+    if (!target) return;
+    if (!confirm('Delete ' + target.orderNumber + '? Stock will be restored.')) return;
+    await applyStockEffect(target, -1);
+    const { db, doc, deleteDoc } = window.FB;
+    await deleteDoc(doc(db, 'orders', orderId));
+    showToast('Deleted ' + target.orderNumber, "info");
+  }, [canWrite, orders, applyStockEffect]);
 
-const categories = useMemo(() => ['All', ...new Set(inventory.map(i => i.category || 'General'))], [inventory]);
+  const categories = useMemo(() => ['All', ...new Set(inventory.map(i => i.category || 'General'))], [inventory]);
 
-const metrics = useMemo(() => {
-const totalInventoryValue = inventory.reduce((acc, i) => acc + ((Number(i.stock) || 0) * (Number(i.unitCost) || 0)), 0);
-const lowStockCount = inventory.filter(i => (Number(i.stock) || 0) <= (Number(i.reorderPoint) || 5)).length;
-const salesOrders = orders.filter(o => o.type === 'SALE' && o.status !== 'Cancelled');
-const totalRevenue = salesOrders.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0);
-const totalCOGS = salesOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, it) => s + ((Number(it.unitCost) || 0) * it.qty), 0), 0);
-return { totalInventoryValue, lowStockCount, totalRevenue, netProfit: totalRevenue - totalCOGS };
-}, [inventory, orders]);
+  const metrics = useMemo(() => {
+    const totalInventoryValue = inventory.reduce((acc, i) => acc + ((Number(i.stock) || 0) * (Number(i.unitCost) || 0)), 0);
+    const lowStockCount = inventory.filter(i => (Number(i.stock) || 0) <= (Number(i.reorderPoint) || 5)).length;
+    const salesOrders = orders.filter(o => o.type === 'SALE' && o.status !== 'Cancelled');
+    const totalRevenue = salesOrders.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0);
+    const totalCOGS = salesOrders.reduce((acc, o) => acc + (o.items || []).reduce((s, it) => s + ((Number(it.unitCost) || 0) * it.qty), 0), 0);
+    return { totalInventoryValue, lowStockCount, totalRevenue, netProfit: totalRevenue - totalCOGS };
+  }, [inventory, orders]);
 
-if (loading) {
-return (
-<div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
-<div className="text-center space-y-3">
-<i className="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500"></i>
-<h2 className="text-xl font-bold">Loading tracker...</h2>
-</div>
-</div>
-);
-}
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
+        <div className="text-center space-y-3">
+          <i className="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500"></i>
+          <h2 className="text-xl font-bold">Loading tracker...</h2>
+        </div>
+      </div>
+    );
+  }
 
-if (connected && !user) {
-return <LoginScreen onSignIn={signIn} onSignUp={signUp} authError={authError} />;
-}
+  if (connected && !user) {
+    return <LoginScreen onSignIn={signIn} onSignUp={signUp} authError={authError} />;
+  }
 
-return (
-<div className="min-h-screen flex flex-col md:flex-row">
-{toast && (
-<div className={"fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 " + (toast.type === 'info' ? 'bg-blue-600' : 'bg-emerald-600')}>
-<i className="fa-solid fa-circle-check"></i> {toast.message}
-</div>
-)}
-{!connected && (
-<div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-amber-100 text-amber-800 text-xs px-3 py-2 rounded-lg border border-amber-300 shadow">
-Firebase didn't initialize — check the config and console for errors.
-</div>
-)}
-{permissionIssue && (
-<div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-rose-100 text-rose-800 text-xs px-3 py-2 rounded-lg border border-rose-300 shadow max-w-xs text-center">
-Firestore denied access — check your security rules cover "inventory" and "orders".
-</div>
-)}
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {toast && (
+        <div className={"fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 " + (toast.type === 'info' ? 'bg-blue-600' : 'bg-emerald-600')}>
+          <i className="fa-solid fa-circle-check"></i> {toast.message}
+        </div>
+      )}
+      {!connected && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-amber-100 text-amber-800 text-xs px-3 py-2 rounded-lg border border-amber-300 shadow">
+          Firebase didn't initialize — check the config and console for errors.
+        </div>
+      )}
+      {permissionIssue && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-rose-100 text-rose-800 text-xs px-3 py-2 rounded-lg border border-rose-300 shadow max-w-xs text-center">
+          Firestore denied access — check your security rules cover "inventory" and "orders".
+        </div>
+      )}
 
-<aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
-<div>
-<div className="p-5 border-b border-slate-800">
-<div className="flex items-center gap-3">
-<div className="bg-gradient-to-tr from-indigo-500 to-emerald-400 p-2.5 rounded-xl text-white font-bold text-lg">JB</div>
-<div>
-<h1 className="font-bold text-white text-base leading-tight">JBD & JESSA</h1>
-<p className="text-xs text-slate-400">Inventory & PO Tracker</p>
-</div>
-</div>
-</div>
-<nav className="p-3 space-y-1">
-{[
-{ key: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
-{ key: 'inventory', label: 'Inventory & Profit', icon: 'fa-boxes-stacked', badge: metrics.lowStockCount },
-{ key: 'orders', label: 'Orders & POs', icon: 'fa-receipt' },
- ].map(tab => (
-<button key={tab.key} onClick={() => { setActiveTab(tab.key); setEditingOrder(null); }}
-className={"w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === tab.key ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400')}>
-<i className={"fa-solid " + tab.icon + " w-5"}></i> {tab.label}
-{!!tab.badge && <span className="ml-auto bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-semibold">{tab.badge}</span>}
-</button>
-))}
-<button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }}
-className={"w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === 'new-order' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-emerald-400')}>
-<i className="fa-solid fa-plus-circle w-5"></i> New Order / Sale
-</button>
-</nav>
-</div>
-<div className="p-4 m-3 bg-slate-800/60 rounded-xl border border-slate-700/50 text-xs space-y-2">
-<div className="flex justify-between text-slate-400"><span>Realized Profit:</span><span className="font-semibold text-emerald-400">{fmt(metrics.netProfit)}</span></div>
-<div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
-<span className="text-slate-500 truncate">{user?.email}</span>
-<button onClick={signOutUser} className="text-rose-400 hover:text-rose-300 font-semibold">Sign out</button>
-</div>
-</div>
-</aside>
+      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
+        <div>
+          <div className="p-5 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-tr from-indigo-500 to-emerald-400 p-2.5 rounded-xl text-white font-bold text-lg">JB</div>
+              <div>
+                <h1 className="font-bold text-white text-base leading-tight">JBD & JESSA</h1>
+                <p className="text-xs text-slate-400">Inventory & PO Tracker</p>
+              </div>
+            </div>
+          </div>
+          <nav className="p-3 space-y-1">
+            {[
+              { key: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
+              { key: 'inventory', label: 'Inventory & Profit', icon: 'fa-boxes-stacked', badge: metrics.lowStockCount },
+              { key: 'orders', label: 'Orders & POs', icon: 'fa-receipt' },
+            ].map(tab => (
+              <button key={tab.key} onClick={() => { setActiveTab(tab.key); setEditingOrder(null); }}
+                className={"w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === tab.key ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-400')}>
+                <i className={"fa-solid " + tab.icon + " w-5"}></i> {tab.label}
+                {!!tab.badge && <span className="ml-auto bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-semibold">{tab.badge}</span>}
+              </button>
+            ))}
+            <button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }}
+              className={"w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition " + (activeTab === 'new-order' ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 text-emerald-400')}>
+              <i className="fa-solid fa-plus-circle w-5"></i> New Order / Sale
+            </button>
+          </nav>
+        </div>
+        <div className="p-4 m-3 bg-slate-800/60 rounded-xl border border-slate-700/50 text-xs space-y-2">
+          <div className="flex justify-between text-slate-400"><span>Realized Profit:</span><span className="font-semibold text-emerald-400">{fmt(metrics.netProfit)}</span></div>
+          <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
+            <span className="text-slate-500 truncate">{user?.email}</span>
+            <button onClick={signOutUser} className="text-rose-400 hover:text-rose-300 font-semibold">Sign out</button>
+          </div>
+        </div>
+      </aside>
 
-<main className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto min-h-screen">
-{activeTab === 'dashboard' && (
-<div className="space-y-6 max-w-7xl mx-auto">
-<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-<div>
-<h2 className="text-2xl font-bold text-slate-900">Business Dashboard</h2>
-<p className="text-slate-500 text-sm">Live inventory and order sync</p>
-</div>
-<button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }}
-className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm shadow-sm transition">
-<i className="fa-solid fa-cart-plus"></i> New Transaction
-</button>
-</div>
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-<StatCard label="Sales Revenue" value={fmt(metrics.totalRevenue)} />
-<StatCard label="Realized Profit" value={fmt(metrics.netProfit)} valueClass="text-emerald-600" />
-<StatCard label="Inventory Value (Cost)" value={fmt(metrics.totalInventoryValue)} />
-<StatCard label="Low Stock Alerts" value={metrics.lowStockCount} valueClass="text-amber-600" />
-</div>
-{metrics.lowStockCount > 0 && (
-<div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5">
-<div className="flex items-center justify-between mb-3">
-<div className="flex items-center gap-2 text-amber-800 font-semibold"><i className="fa-solid fa-triangle-exclamation"></i> Attention Needed: Reorder Stock</div>
-<button onClick={() => setActiveTab('inventory')} className="text-xs text-amber-800 hover:text-amber-900 font-semibold underline">Manage Inventory</button>
-</div>
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-{inventory.filter(i => (Number(i.stock) || 0) <= (Number(i.reorderPoint) || 5)).map(item => (
-<div key={item.id} className="bg-white p-3 rounded-lg border border-amber-200 shadow-sm flex items-center justify-between">
-<div>
-<div className="font-semibold text-sm text-slate-800">{item.name}</div>
-<div className="text-xs text-slate-400">SKU: {item.sku}</div>
-</div>
-<div className="flex items-center gap-2">
-<span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-xs">{item.stock} left</span>
-<button onClick={() => adjustStock(item.id, 10)} className="text-xs bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 px-2 py-1 rounded font-bold">+10</button>
-</div>
-</div>
-))}
-</div>
-</div>
-)}
-</div>
-)}
+      <main className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto min-h-screen">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Business Dashboard</h2>
+                <p className="text-slate-500 text-sm">Live inventory and order sync</p>
+              </div>
+              <button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm shadow-sm transition">
+                <i className="fa-solid fa-cart-plus"></i> New Transaction
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="Sales Revenue" value={fmt(metrics.totalRevenue)} />
+              <StatCard label="Realized Profit" value={fmt(metrics.netProfit)} valueClass="text-emerald-600" />
+              <StatCard label="Inventory Value (Cost)" value={fmt(metrics.totalInventoryValue)} />
+              <StatCard label="Low Stock Alerts" value={metrics.lowStockCount} valueClass="text-amber-600" />
+            </div>
+            {metrics.lowStockCount > 0 && (
+              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-amber-800 font-semibold"><i className="fa-solid fa-triangle-exclamation"></i> Attention Needed: Reorder Stock</div>
+                  <button onClick={() => setActiveTab('inventory')} className="text-xs text-amber-800 hover:text-amber-900 font-semibold underline">Manage Inventory</button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {inventory.filter(i => (Number(i.stock) || 0) <= (Number(i.reorderPoint) || 5)).map(item => (
+                    <div key={item.id} className="bg-white p-3 rounded-lg border border-amber-200 shadow-sm flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-sm text-slate-800">{item.name}</div>
+                        <div className="text-xs text-slate-400">SKU: {item.sku}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-xs">{item.stock} left</span>
+                        <button onClick={() => adjustStock(item.id, 10)} className="text-xs bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 px-2 py-1 rounded font-bold">+10</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-{activeTab === 'inventory' && (
-<div className="space-y-6 max-w-7xl mx-auto">
-<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-<h2 className="text-2xl font-bold text-slate-900">Stock & Profit Tracker</h2>
-<button onClick={() => { setEditingItem(null); setItemModalOpen(true); }}
-className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm">+ Add Item</button>
-</div>
-<div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
-<input type="text" placeholder="Search SKU, Name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-<select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-className="w-full md:w-48 px-3 py-2 bg-slate-50 border rounded-lg text-sm">
-{categories.map(c => <option key={c} value={c}>{c}</option>)}
-</select>
-</div>
-<div className="bg-white rounded-xl border shadow-sm overflow-hidden overflow-x-auto">
-<table className="w-full text-left text-sm">
-<thead className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase">
-<tr><th className="p-4">SKU / Name</th><th className="p-4 text-center">Stock</th><th className="p-4 text-right">Cost</th><th className="p-4 text-right">Price</th><th className="p-4 text-right">Margin</th><th className="p-4 text-center">Actions</th></tr>
-</thead>
-<tbody className="divide-y divide-slate-100">
-{inventory.filter(item =>
-(item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (item.sku || '').toLowerCase().includes(searchQuery.toLowerCase())
-).filter(item => categoryFilter === 'All' || item.category === categoryFilter).map(item => (
-<tr key={item.id} className="hover:bg-slate-50">
-<td className="p-4"><div className="font-bold">{item.name}</div><div className="text-xs text-slate-400">{item.sku}</div></td>
-<td className="p-4 text-center">
-<div className="inline-flex items-center gap-2">
-<button onClick={() => adjustStock(item.id, -1)} className="w-6 h-6 border bg-white rounded font-bold">-</button>
-<span className="font-bold w-6 inline-block text-center">{item.stock}</span>
-<button onClick={() => adjustStock(item.id, 1)} className="w-6 h-6 border bg-white rounded font-bold">+</button>
-</div>
-</td>
-<td className="p-4 text-right">{fmt(item.unitCost)}</td>
-<td className="p-4 text-right font-bold">{fmt(item.sellingPrice)}</td>
-<td className="p-4 text-right text-emerald-600 font-bold">{fmt((Number(item.sellingPrice) || 0) - (Number(item.unitCost) || 0))}</td>
-<td className="p-4 text-center">
-<button onClick={() => { setEditingItem(item); setItemModalOpen(true); }} className="p-1.5 text-indigo-600"><i className="fa-solid fa-pen"></i></button>
-<button onClick={() => deleteItem(item.id)} className="p-1.5 text-rose-600"><i className="fa-solid fa-trash"></i></button>
-</td>
-</tr>
-))}
-{inventory.length === 0 && (
-<tr><td colSpan="6" className="p-8 text-center text-slate-400">No items yet — add your first one.</td></tr>
-)}
-</tbody>
-</table>
-</div>
-</div>
-)}
+        {activeTab === 'inventory' && (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-bold text-slate-900">Stock & Profit Tracker</h2>
+              <button onClick={() => { setEditingItem(null); setItemModalOpen(true); }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm">+ Add Item</button>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
+              <input type="text" placeholder="Search SKU, Name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                className="w-full md:w-48 px-3 py-2 bg-slate-50 border rounded-lg text-sm">
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="bg-white rounded-xl border shadow-sm overflow-hidden overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase">
+                  <tr><th className="p-4">SKU / Name</th><th className="p-4 text-center">Stock</th><th className="p-4 text-right">Cost</th><th className="p-4 text-right">Price</th><th className="p-4 text-right">Margin</th><th className="p-4 text-center">Actions</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {inventory.filter(item =>
+                    (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (item.sku || '').toLowerCase().includes(searchQuery.toLowerCase())
+                  ).filter(item => categoryFilter === 'All' || item.category === categoryFilter).map(item => (
+                    <tr key={item.id} className="hover:bg-slate-50">
+                      <td className="p-4"><div className="font-bold">{item.name}</div><div className="text-xs text-slate-400">{item.sku}{(item.size || item.color) ? (' • ' + [item.size, item.color].filter(Boolean).join('/')) : ''}</div></td>
+                      <td className="p-4 text-center">
+                        <div className="inline-flex items-center gap-2">
+                          <button onClick={() => adjustStock(item.id, -1)} className="w-6 h-6 border bg-white rounded font-bold">-</button>
+                          <span className="font-bold w-6 inline-block text-center">{item.stock}</span>
+                          <button onClick={() => adjustStock(item.id, 1)} className="w-6 h-6 border bg-white rounded font-bold">+</button>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">{fmt(item.unitCost)}</td>
+                      <td className="p-4 text-right font-bold">{fmt(item.sellingPrice)}</td>
+                      <td className="p-4 text-right text-emerald-600 font-bold">{fmt((Number(item.sellingPrice) || 0) - (Number(item.unitCost) || 0))}</td>
+                      <td className="p-4 text-center">
+                        <button onClick={() => { setEditingItem(item); setItemModalOpen(true); }} className="p-1.5 text-indigo-600"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={() => deleteItem(item.id)} className="p-1.5 text-rose-600"><i className="fa-solid fa-trash"></i></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {inventory.length === 0 && (
+                    <tr><td colSpan="6" className="p-8 text-center text-slate-400">No items yet — add your first one.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-{activeTab === 'orders' && (
-<div className="space-y-6 max-w-7xl mx-auto">
-<div className="flex justify-between items-center">
-<h2 className="text-2xl font-bold text-slate-900">Orders & POs</h2>
-<button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className="bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold">+ Create</button>
-</div>
-<div className="space-y-4">
-{orders.map(order => (
-<div key={order.id} className="bg-white rounded-xl border p-5 shadow-sm">
-<div className="flex flex-wrap justify-between items-center border-b pb-3 mb-3 gap-2">
-<div><h3 className="font-bold">{order.orderNumber} ({order.type})</h3><p className="text-xs text-slate-500">{order.customerOrVendor} • {order.date}</p></div>
-<div className="flex gap-2">
-<select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-xs border px-2 py-1 rounded">
-<option value="Draft">Draft</option><option value="Committed">Committed</option><option value="Fulfilled">Fulfilled</option><option value="Cancelled">Cancelled</option>
-</select>
-<button onClick={() => { setEditingOrder(order); setActiveTab('new-order'); }} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded">Edit</button>
-<button onClick={() => deleteOrder(order.id)} className="px-3 py-1 bg-rose-50 text-rose-700 text-xs rounded">Delete</button>
-</div>
-</div>
-<div className="bg-slate-50 p-3 rounded text-xs space-y-1">
-{(order.items || []).map((line, idx) => (
-<div key={idx} className="flex justify-between"><span>{line.name} x{line.qty}</span><span className="font-bold">{fmt(line.qty * line.unitPrice)}</span></div>
-))}
-</div>
-<div className="text-right font-bold mt-2">Total: {fmt(order.totalAmount)}</div>
-</div>
-))}
-{orders.length === 0 && <div className="text-center text-slate-400 py-8">No orders yet.</div>}
-</div>
-</div>
-)}
+        {activeTab === 'orders' && (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-slate-900">Orders & POs</h2>
+              <button onClick={() => { setEditingOrder(null); setActiveTab('new-order'); }} className="bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold">+ Create</button>
+            </div>
+            <div className="space-y-4">
+              {orders.map(order => (
+                <div key={order.id} className="bg-white rounded-xl border p-5 shadow-sm">
+                  <div className="flex flex-wrap justify-between items-center border-b pb-3 mb-3 gap-2">
+                    <div><h3 className="font-bold">{order.orderNumber} ({order.type})</h3><p className="text-xs text-slate-500">{order.customerOrVendor} • {order.date}</p></div>
+                    <div className="flex gap-2">
+                      <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)} className="text-xs border px-2 py-1 rounded">
+                        <option value="Draft">Draft</option><option value="Committed">Committed</option><option value="Fulfilled">Fulfilled</option><option value="Cancelled">Cancelled</option>
+                      </select>
+                      <button onClick={() => { setEditingOrder(order); setActiveTab('new-order'); }} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded">Edit</button>
+                      <button onClick={() => deleteOrder(order.id)} className="px-3 py-1 bg-rose-50 text-rose-700 text-xs rounded">Delete</button>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded text-xs space-y-1">
+                    {(order.items || []).map((line, idx) => (
+                      <div key={idx} className="flex justify-between"><span>{line.name} x{line.qty}</span><span className="font-bold">{fmt(line.qty * line.unitPrice)}</span></div>
+                    ))}
+                  </div>
+                  <div className="text-right font-bold mt-2">Total: {fmt(order.totalAmount)}</div>
+                </div>
+              ))}
+              {orders.length === 0 && <div className="text-center text-slate-400 py-8">No orders yet.</div>}
+            </div>
+          </div>
+        )}
 
-{activeTab === 'new-order' && (
-<OrderForm existingOrder={editingOrder} inventory={inventory} onSubmit={saveOrder} onCancel={() => { setEditingOrder(null); setActiveTab('orders'); }} />
-)}
-</main>
+        {activeTab === 'new-order' && (
+          <OrderForm existingOrder={editingOrder} inventory={inventory} onSubmit={saveOrder} onCancel={() => { setEditingOrder(null); setActiveTab('orders'); }} />
+        )}
+      </main>
 
-{itemModalOpen && <InventoryModal item={editingItem} onClose={() => { setItemModalOpen(false); setEditingItem(null); }} onSave={saveItem} />}
-</div>
-);
+      {itemModalOpen && <InventoryModal item={editingItem} onClose={() => { setItemModalOpen(false); setEditingItem(null); }} onSave={saveItem} />}
+    </div>
+  );
 }
 
 function LoginScreen({ onSignIn, onSignUp, authError }) {
-const [mode, setMode] = useState('signin');
-const [email, setEmail] = useState('');
-const [password, setPassword] = useState('');
-const [submitting, setSubmitting] = useState(false);
+  const [mode, setMode] = useState('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-const handleSubmit = async (e) => {
-e.preventDefault();
-setSubmitting(true);
-if (mode === 'signin') await onSignIn(email, password);
-else await onSignUp(email, password);
-setSubmitting(false);
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    if (mode === 'signin') await onSignIn(email, password);
+    else await onSignUp(email, password);
+    setSubmitting(false);
+  };
 
-const errorMessages = {
-'auth/invalid-email': 'That email address looks invalid.',
-'auth/user-not-found': 'No account with that email — try signing up instead.',
-'auth/wrong-password': 'Wrong password.',
-'auth/invalid-credential': 'Incorrect email or password.',
-'auth/email-already-in-use': 'An account already exists — try signing in instead.',
-'auth/weak-password': 'Password should be at least 6 characters.',
-'auth/operation-not-allowed': 'Email/password sign-in is not enabled yet — turn it on in Firebase Console, Authentication, Sign-in method.',
-};
+  const errorMessages = {
+    'auth/invalid-email': 'That email address looks invalid.',
+    'auth/user-not-found': 'No account with that email — try signing up instead.',
+    'auth/wrong-password': 'Wrong password.',
+    'auth/invalid-credential': 'Incorrect email or password.',
+    'auth/email-already-in-use': 'An account already exists — try signing in instead.',
+    'auth/weak-password': 'Password should be at least 6 characters.',
+    'auth/operation-not-allowed': 'Email/password sign-in is not enabled yet — turn it on in Firebase Console, Authentication, Sign-in method.',
+  };
 
-return (
-<div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
-<form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 w-full max-w-sm space-y-4">
-<div className="text-center space-y-1">
-<div className="inline-flex bg-gradient-to-tr from-indigo-500 to-emerald-400 p-2.5 rounded-xl text-white font-bold text-lg">JB</div>
-<h1 className="font-bold text-lg text-slate-900">JBD & JESSA Tracker</h1>
-</div>
-<div className="flex bg-slate-100 rounded-lg p-1 text-sm font-semibold">
-<button type="button" onClick={() => setMode('signin')} className={"flex-1 py-1.5 rounded-md " + (mode === 'signin' ? 'bg-white shadow text-indigo-600' : 'text-slate-500')}>Sign In</button>
-<button type="button" onClick={() => setMode('signup')} className={"flex-1 py-1.5 rounded-md " + (mode === 'signup' ? 'bg-white shadow text-indigo-600' : 'text-slate-500')}>Sign Up</button>
-</div>
-<input type="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" autoCapitalize="off" />
-<input type="password" required placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" minLength="6" />
-{authError && (
-<p className="text-xs text-rose-600">{errorMessages[authError] || ("Error: " + authError)}</p>
-)}
-<button type="submit" disabled={submitting} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-lg font-bold">
-{submitting ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-</button>
-</form>
-</div>
-);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 w-full max-w-sm space-y-4">
+        <div className="text-center space-y-1">
+          <div className="inline-flex bg-gradient-to-tr from-indigo-500 to-emerald-400 p-2.5 rounded-xl text-white font-bold text-lg">JB</div>
+          <h1 className="font-bold text-lg text-slate-900">JBD & JESSA Tracker</h1>
+        </div>
+        <div className="flex bg-slate-100 rounded-lg p-1 text-sm font-semibold">
+          <button type="button" onClick={() => setMode('signin')} className={"flex-1 py-1.5 rounded-md " + (mode === 'signin' ? 'bg-white shadow text-indigo-600' : 'text-slate-500')}>Sign In</button>
+          <button type="button" onClick={() => setMode('signup')} className={"flex-1 py-1.5 rounded-md " + (mode === 'signup' ? 'bg-white shadow text-indigo-600' : 'text-slate-500')}>Sign Up</button>
+        </div>
+        <input type="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" autoCapitalize="off" />
+        <input type="password" required placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" minLength="6" />
+        {authError && (
+          <p className="text-xs text-rose-600">{errorMessages[authError] || ("Error: " + authError)}</p>
+        )}
+        <button type="submit" disabled={submitting} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-lg font-bold">
+          {submitting ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+        </button>
+      </form>
+    </div>
+  );
 }
 
 function StatCard({ label, value, valueClass }) {
-return (
-<div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-<div className="text-xs font-semibold text-slate-500 uppercase">{label}</div>
-<div className={"text-2xl font-bold mt-2 " + (valueClass || 'text-slate-900')}>{value}</div>
-</div>
-);
+  return (
+    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div className="text-xs font-semibold text-slate-500 uppercase">{label}</div>
+      <div className={"text-2xl font-bold mt-2 " + (valueClass || 'text-slate-900')}>{value}</div>
+    </div>
+  );
 }
 
 function OrderForm({ existingOrder, inventory, onSubmit, onCancel }) {
-const [orderType, setOrderType] = useState(existingOrder?.type || 'SALE');
-const [customerOrVendor, setCustomerOrVendor] = useState(existingOrder?.customerOrVendor || '');
-const [notes, setNotes] = useState(existingOrder?.notes || '');
-const [cart, setCart] = useState(existingOrder?.items || []);
+  const [orderType, setOrderType] = useState(existingOrder?.type || 'SALE');
+  const [customerOrVendor, setCustomerOrVendor] = useState(existingOrder?.customerOrVendor || '');
+  const [notes, setNotes] = useState(existingOrder?.notes || '');
+  const [cart, setCart] = useState(existingOrder?.items || []);
 
-const addToCart = (item) => {
-const existing = cart.find(c => c.itemId === item.id);
-if (existing) {
-setCart(cart.map(c => c.itemId === item.id ? { ...c, qty: c.qty + 1 } : c));
-} else {
-setCart([...cart, {
-itemId: item.id, sku: item.sku, name: item.name, qty: 1,
-unitPrice: orderType === 'SALE' ? item.sellingPrice : item.unitCost,
-unitCost: item.unitCost,
-}]);
-}
-};
-const updateQty = (id, qty) => setCart(cart.map(c => c.itemId === id ? { ...c, qty: Math.max(1, Number(qty)) } : c));
-const totalAmount = cart.reduce((s, i) => s + (i.qty * i.unitPrice), 0);
+  const addToCart = (item) => {
+    const existing = cart.find(c => c.itemId === item.id);
+    if (existing) {
+      setCart(cart.map(c => c.itemId === item.id ? { ...c, qty: c.qty + 1 } : c));
+    } else {
+      setCart([...cart, {
+        itemId: item.id, sku: item.sku, name: item.name, qty: 1,
+        unitPrice: orderType === 'SALE' ? item.sellingPrice : item.unitCost,
+        unitCost: item.unitCost,
+      }]);
+    }
+  };
+  const updateQty = (id, qty) => setCart(cart.map(c => c.itemId === id ? { ...c, qty: Math.max(1, Number(qty)) } : c));
+  const totalAmount = cart.reduce((s, i) => s + (i.qty * i.unitPrice), 0);
 
-const handleSubmit = (commit) => {
-if (!customerOrVendor) { alert("Enter a customer or vendor name"); return; }
-if (cart.length === 0) { alert("Add at least one item"); return; }
-onSubmit({
-id: existingOrder?.id, orderNumber: existingOrder?.orderNumber, type: orderType,
-customerOrVendor, notes, items: cart, totalAmount, status: existingOrder?.status || 'Draft',
-}, commit);
-};
+  const handleSubmit = (commit) => {
+    if (!customerOrVendor) { alert("Enter a customer or vendor name"); return; }
+    if (cart.length === 0) { alert("Add at least one item"); return; }
+    onSubmit({
+      id: existingOrder?.id, orderNumber: existingOrder?.orderNumber, type: orderType,
+      customerOrVendor, notes, items: cart, totalAmount, status: existingOrder?.status || 'Draft',
+    }, commit);
+  };
 
-return (
-<div className="bg-white rounded-xl border p-6 space-y-6 max-w-4xl mx-auto">
-<h2 className="text-xl font-bold">{existingOrder ? 'Edit Transaction' : 'New Transaction'}</h2>
-<div className="flex gap-2">
-<button onClick={() => setOrderType('SALE')} className={"px-4 py-2 rounded text-sm font-bold " + (orderType === 'SALE' ? 'bg-emerald-600 text-white' : 'bg-slate-100')}>SALE (Deduct Stock)</button>
-<button onClick={() => setOrderType('PURCHASE')} className={"px-4 py-2 rounded text-sm font-bold " + (orderType === 'PURCHASE' ? 'bg-blue-600 text-white' : 'bg-slate-100')}>PO (Add Stock)</button>
-</div>
-<input type="text" placeholder="Customer or Vendor Name" value={customerOrVendor} onChange={e => setCustomerOrVendor(e.target.value)} className="w-full p-2 border rounded" />
-<textarea placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded text-sm" rows="2" />
+  return (
+    <div className="bg-white rounded-xl border p-6 space-y-6 max-w-4xl mx-auto">
+      <h2 className="text-xl font-bold">{existingOrder ? 'Edit Transaction' : 'New Transaction'}</h2>
+      <div className="flex gap-2">
+        <button onClick={() => setOrderType('SALE')} className={"px-4 py-2 rounded text-sm font-bold " + (orderType === 'SALE' ? 'bg-emerald-600 text-white' : 'bg-slate-100')}>SALE (Deduct Stock)</button>
+        <button onClick={() => setOrderType('PURCHASE')} className={"px-4 py-2 rounded text-sm font-bold " + (orderType === 'PURCHASE' ? 'bg-blue-600 text-white' : 'bg-slate-100')}>PO (Add Stock)</button>
+      </div>
+      <input type="text" placeholder="Customer or Vendor Name" value={customerOrVendor} onChange={e => setCustomerOrVendor(e.target.value)} className="w-full p-2 border rounded" />
+      <textarea placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded text-sm" rows="2" />
 
-<div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-slate-50 border rounded max-h-48 overflow-y-auto">
-{inventory.map(item => (
-<button key={item.id} onClick={() => addToCart(item)} className="p-2 bg-white border rounded text-left text-xs font-bold hover:border-indigo-500">
-{item.name} (Stock: {item.stock})
-</button>
-))}
-{inventory.length === 0 && <div className="col-span-full text-center text-xs text-slate-400 py-4">No inventory items yet.</div>}
-</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-slate-50 border rounded max-h-48 overflow-y-auto">
+        {inventory.map(item => (
+          <button key={item.id} onClick={() => addToCart(item)} className="p-2 bg-white border rounded text-left text-xs font-bold hover:border-indigo-500">
+            {item.name}{(item.size || item.color) ? (' — ' + [item.size, item.color].filter(Boolean).join('/')) : ''} (Stock: {item.stock})
+          </button>
+        ))}
+        {inventory.length === 0 && <div className="col-span-full text-center text-xs text-slate-400 py-4">No inventory items yet.</div>}
+      </div>
 
-<div className="border rounded p-2">
-{cart.map(line => (
-<div key={line.itemId} className="flex justify-between items-center py-2 border-b text-sm">
-<span className="font-bold">{line.name}</span>
-<div className="flex items-center gap-2">
-Qty: <input type="number" value={line.qty} onChange={e => updateQty(line.itemId, e.target.value)} className="w-16 p-1 border rounded text-center" />
-<button onClick={() => setCart(cart.filter(c => c.itemId !== line.itemId))} className="text-rose-600 px-2">X</button>
-</div>
-</div>
-))}
-<div className="text-right font-bold pt-2 text-lg">Total: {fmt(totalAmount)}</div>
-</div>
-<div className="flex justify-end gap-2">
-<button onClick={onCancel} className="px-4 py-2 bg-slate-200 rounded font-bold">Cancel</button>
-<button onClick={() => handleSubmit(true)} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold">Save & Sync</button>
-</div>
-</div>
-);
+      <div className="border rounded p-2">
+        {cart.map(line => (
+          <div key={line.itemId} className="flex justify-between items-center py-2 border-b text-sm">
+            <span className="font-bold">{line.name}</span>
+            <div className="flex items-center gap-2">
+              Qty: <input type="number" value={line.qty} onChange={e => updateQty(line.itemId, e.target.value)} className="w-16 p-1 border rounded text-center" />
+              <button onClick={() => setCart(cart.filter(c => c.itemId !== line.itemId))} className="text-rose-600 px-2">X</button>
+            </div>
+          </div>
+        ))}
+        <div className="text-right font-bold pt-2 text-lg">Total: {fmt(totalAmount)}</div>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button onClick={onCancel} className="px-4 py-2 bg-slate-200 rounded font-bold">Cancel</button>
+        <button onClick={() => handleSubmit(true)} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold">Save & Sync</button>
+      </div>
+    </div>
+  );
 }
 
 function InventoryModal({ item, onClose, onSave }) {
-const [form, setForm] = useState({
-id: item?.id || '', sku: item?.sku || '', name: item?.name || '', category: item?.category || 'General',
-stock: item?.stock ?? 0, reorderPoint: item?.reorderPoint ?? 5, unitCost: item?.unitCost ?? 0, sellingPrice: item?.sellingPrice ?? 0,
-});
-const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-return (
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-<div className="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
-<h3 className="font-bold">{item ? 'Edit Item' : 'New Item'}</h3>
-<input type="text" placeholder="Name" value={form.name} onChange={e => set('name', e.target.value)} className="w-full p-2 border rounded" />
-<div className="grid grid-cols-2 gap-2">
-<input type="text" placeholder="SKU" value={form.sku} onChange={e => set('sku', e.target.value)} className="w-full p-2 border rounded" />
-<input type="text" placeholder="Category" value={form.category} onChange={e => set('category', e.target.value)} className="w-full p-2 border rounded" />
-<input type="number" placeholder="Stock" value={form.stock} onChange={e => set('stock', Number(e.target.value))} className="w-full p-2 border rounded" />
-<input type="number" placeholder="Reorder Point" value={form.reorderPoint} onChange={e => set('reorderPoint', Number(e.target.value))} className="w-full p-2 border rounded" />
-<input type="number" placeholder="Cost `$" step="0.01" value={form.unitCost} onChange={e => set('unitCost', Number(e.target.value))} className="w-full p-2 border rounded" />
-<input type="number" placeholder="Price $" step="0.01" value={form.sellingPrice} onChange={e => set('sellingPrice', Number(e.target.value))} className="w-full p-2 border rounded" />
-</div>
-<div className="flex justify-end gap-2 pt-4">
-<button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
-<button onClick={() => onSave(form)} className="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
-</div>
-</div>
-</div>
-);
+  const [form, setForm] = useState({
+    id: item?.id || '', sku: item?.sku || '', name: item?.name || '',
+    size: item?.size || '', color: item?.color || '',
+    stock: item?.stock ?? 0, unitCost: item?.unitCost ?? 0, sellingPrice: item?.sellingPrice ?? 0,
+    category: item?.category || 'General', reorderPoint: item?.reorderPoint ?? 5,
+  });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const Field = ({ label, children }) => (
+    <div>
+      <label className="text-xs font-semibold text-slate-500 block mb-1">{label}</label>
+      {children}
+    </div>
+  );
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white p-6 rounded-xl w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
+        <h3 className="font-bold">{item ? 'Edit Item' : 'New Item'}</h3>
+        <Field label="Name">
+          <input type="text" value={form.name} onChange={e => set('name', e.target.value)} className="w-full p-2 border rounded" />
+        </Field>
+        <Field label="SKU #">
+          <input type="text" value={form.sku} onChange={e => set('sku', e.target.value)} className="w-full p-2 border rounded" />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Size">
+            <input type="text" value={form.size} onChange={e => set('size', e.target.value)} className="w-full p-2 border rounded" />
+          </Field>
+          <Field label="Color">
+            <input type="text" value={form.color} onChange={e => set('color', e.target.value)} className="w-full p-2 border rounded" />
+          </Field>
+        </div>
+        <Field label="Category">
+          <input type="text" value={form.category} onChange={e => set('category', e.target.value)} className="w-full p-2 border rounded" />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Starting Quantity">
+            <input type="number" value={form.stock} onChange={e => set('stock', Number(e.target.value))} className="w-full p-2 border rounded" />
+          </Field>
+          <Field label="Reorder Point (low-stock alert)">
+            <input type="number" value={form.reorderPoint} onChange={e => set('reorderPoint', Number(e.target.value))} className="w-full p-2 border rounded" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Cost $ (what you pay)">
+            <input type="number" step="0.01" value={form.unitCost} onChange={e => set('unitCost', Number(e.target.value))} className="w-full p-2 border rounded" />
+          </Field>
+          <Field label="Price $ (what you charge)">
+            <input type="number" step="0.01" value={form.sellingPrice} onChange={e => set('sellingPrice', Number(e.target.value))} className="w-full p-2 border rounded" />
+          </Field>
+        </div>
+        <div className="flex justify-end gap-2 pt-4">
+          <button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded">Cancel</button>
+          <button onClick={() => onSave(form)} className="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
 document.getElementById('root').setAttribute('data-app-mounted', 'true');
 } catch (err) {
-console.error("App init failed:", err);
-var root2 = document.getElementById('root');
-if (root2) {
-root2.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
-'<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">App failed to start</h2>' +
-'<p style="white-space:pre-wrap;">' + (err && err.stack ? err.stack : String(err)) + '</p></div></div>';
-}
+  console.error("App init failed:", err);
+  var root2 = document.getElementById('root');
+  if (root2) {
+    root2.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fca5a5;padding:24px;font-family:monospace;text-align:left;">' +
+      '<div style="max-width:640px;"><h2 style="color:#fff;font-family:sans-serif;">App failed to start</h2>' +
+      '<p style="white-space:pre-wrap;">' + (err && err.stack ? err.stack : String(err)) + '</p></div></div>';
+  }
 }
 </script>
 </body>
