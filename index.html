@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -493,7 +493,7 @@ function App() {
                       <td className="p-4 text-right font-bold">{fmt(item.sellingPrice)}</td>
                       <td className="p-4 text-right text-emerald-600 font-bold">{fmt((Number(item.sellingPrice) || 0) - (Number(item.unitCost) || 0))}</td>
                       <td className="p-4 text-center">
-                        <button onClick={() => setBarcodeItem(item)} className="p-1.5 text-slate-600"><i className="fa-solid fa-barcode"></i></button>
+                        <button onClick={() => setBarcodeItem(item)} className="p-1.5 text-slate-600"><i className="fa-solid fa-qrcode"></i></button>
                         <button onClick={() => { setEditingItem(item); setItemModalOpen(true); }} className="p-1.5 text-indigo-600"><i className="fa-solid fa-pen"></i></button>
                         <button onClick={() => deleteItem(item.id)} className="p-1.5 text-rose-600"><i className="fa-solid fa-trash"></i></button>
                       </td>
@@ -816,7 +816,7 @@ function OrderForm({ existingOrder, inventory, customers, vendors, onSubmit, onC
       <textarea placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded text-sm" rows="2" />
 
       <button type="button" onClick={() => setScannerOpen(true)} className="w-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded p-2 text-sm font-semibold">
-        <i className="fa-solid fa-camera"></i> Scan Barcode
+        <i className="fa-solid fa-camera"></i> Scan Code
       </button>
       {scanMessage && <p className="text-xs text-center text-slate-500">{scanMessage}</p>}
 
@@ -832,7 +832,7 @@ function OrderForm({ existingOrder, inventory, customers, vendors, onSubmit, onC
       {scannerOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-4 w-full max-w-sm space-y-3">
-            <h3 className="font-bold text-center">Scan Product Barcode</h3>
+            <h3 className="font-bold text-center">Scan Product Code</h3>
             <div id="order-scanner-region" style={{ width: '100%' }}></div>
             <button onClick={() => setScannerOpen(false)} className="w-full px-4 py-2 bg-slate-200 rounded">Cancel</button>
           </div>
@@ -943,18 +943,34 @@ function VendorModal({ vendor, onClose, onSave }) {
 
 function BarcodeModal({ item, onClose }) {
   const canvasRef = useRef(null);
+  const [error, setError] = useState('');
   useEffect(() => {
-    if (canvasRef.current && window.JsBarcode) {
-      try {
-        window.JsBarcode(canvasRef.current, item.sku, { format: "CODE128", displayValue: true, width: 2, height: 70, margin: 10 });
-      } catch (e) { console.error("Barcode render failed:", e); }
+    setError('');
+    if (!window.QRCode) {
+      setError('The QR code library failed to load. Check your internet connection and reload the page.');
+      return;
     }
+    if (!item.sku) {
+      setError('This item has no SKU/code to generate a QR code from.');
+      return;
+    }
+    window.QRCode.toCanvas(canvasRef.current, item.sku, { width: 220, margin: 2 }, function (err) {
+      if (err) {
+        console.error('QR code render failed:', err);
+        setError('Could not generate the QR code: ' + err.message);
+      }
+    });
   }, [item]);
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 text-center">
         <h3 className="font-bold">{item.name}</h3>
-        <canvas ref={canvasRef}></canvas>
+        <p className="text-xs text-slate-400">{item.sku}</p>
+        {error ? (
+          <p className="text-sm text-rose-600">{error}</p>
+        ) : (
+          <canvas ref={canvasRef}></canvas>
+        )}
         <div className="flex justify-center gap-2 pt-2">
           <button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded">Close</button>
           <button onClick={() => window.print()} className="px-4 py-2 bg-indigo-600 text-white rounded">Print</button>
