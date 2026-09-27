@@ -7,6 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -86,7 +88,7 @@ window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
 <script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo, useCallback } = React;
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
 try {
 
 function useFirebase() {
@@ -180,6 +182,7 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [editingItem, setEditingItem] = useState(null);
   const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [barcodeItem, setBarcodeItem] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -445,6 +448,7 @@ function App() {
                       <td className="p-4 text-right font-bold">{fmt(item.sellingPrice)}</td>
                       <td className="p-4 text-right text-emerald-600 font-bold">{fmt((Number(item.sellingPrice) || 0) - (Number(item.unitCost) || 0))}</td>
                       <td className="p-4 text-center">
+                        <button onClick={() => setBarcodeItem(item)} className="p-1.5 text-slate-600"><i className="fa-solid fa-barcode"></i></button>
                         <button onClick={() => { setEditingItem(item); setItemModalOpen(true); }} className="p-1.5 text-indigo-600"><i className="fa-solid fa-pen"></i></button>
                         <button onClick={() => deleteItem(item.id)} className="p-1.5 text-rose-600"><i className="fa-solid fa-trash"></i></button>
                       </td>
@@ -504,6 +508,7 @@ function App() {
       </main>
 
       {itemModalOpen && <InventoryModal item={editingItem} inventory={inventory} onClose={() => { setItemModalOpen(false); setEditingItem(null); }} onSave={saveItem} />}
+      {barcodeItem && <BarcodeModal item={barcodeItem} onClose={() => setBarcodeItem(null)} />}
     </div>
   );
 }
@@ -570,6 +575,8 @@ function OrderForm({ existingOrder, inventory, onSubmit, onCancel }) {
   const [customerOrVendor, setCustomerOrVendor] = useState(existingOrder?.customerOrVendor || '');
   const [notes, setNotes] = useState(existingOrder?.notes || '');
   const [cart, setCart] = useState(existingOrder?.items || []);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanMessage, setScanMessage] = useState('');
 
   const addToCart = (item) => {
     const existing = cart.find(c => c.itemId === item.id);
@@ -583,6 +590,41 @@ function OrderForm({ existingOrder, inventory, onSubmit, onCancel }) {
       }]);
     }
   };
+
+  const handleScanResult = (code) => {
+    const match = inventory.find(i => (i.sku || '').toLowerCase() === code.toLowerCase());
+    if (match) {
+      addToCart(match);
+      setScanMessage('Added: ' + match.name);
+    } else {
+      setScanMessage('No product found for code: ' + code);
+    }
+    setTimeout(() => setScanMessage(''), 3000);
+  };
+
+  useEffect(() => {
+    if (!scannerOpen || !window.Html5Qrcode) return;
+    const qr = new window.Html5Qrcode('order-scanner-region');
+    let stopped = false;
+    qr.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: 220 },
+      (decodedText) => {
+        if (stopped) return;
+        stopped = true;
+        qr.stop().catch(() => {});
+        setScannerOpen(false);
+        handleScanResult(decodedText);
+      },
+      () => {}
+    ).catch((err) => {
+      alert('Could not start the camera: ' + err);
+      setScannerOpen(false);
+    });
+    return () => { if (!stopped) qr.stop().catch(() => {}); };
+    // eslint-disable-next-line
+  }, [scannerOpen]);
+
   const updateQty = (id, qty) => setCart(cart.map(c => c.itemId === id ? { ...c, qty: Math.max(1, Number(qty)) } : c));
   const totalAmount = cart.reduce((s, i) => s + (i.qty * i.unitPrice), 0);
 
@@ -605,6 +647,11 @@ function OrderForm({ existingOrder, inventory, onSubmit, onCancel }) {
       <input type="text" placeholder="Customer or Vendor Name" value={customerOrVendor} onChange={e => setCustomerOrVendor(e.target.value)} className="w-full p-2 border rounded" />
       <textarea placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded text-sm" rows="2" />
 
+      <button type="button" onClick={() => setScannerOpen(true)} className="w-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded p-2 text-sm font-semibold">
+        <i className="fa-solid fa-camera"></i> Scan Barcode
+      </button>
+      {scanMessage && <p className="text-xs text-center text-slate-500">{scanMessage}</p>}
+
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-slate-50 border rounded max-h-48 overflow-y-auto">
         {inventory.map(item => (
           <button key={item.id} onClick={() => addToCart(item)} className="p-2 bg-white border rounded text-left text-xs font-bold hover:border-indigo-500">
@@ -613,6 +660,16 @@ function OrderForm({ existingOrder, inventory, onSubmit, onCancel }) {
         ))}
         {inventory.length === 0 && <div className="col-span-full text-center text-xs text-slate-400 py-4">No inventory items yet.</div>}
       </div>
+
+      {scannerOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 w-full max-w-sm space-y-3">
+            <h3 className="font-bold text-center">Scan Product Barcode</h3>
+            <div id="order-scanner-region" style={{ width: '100%' }}></div>
+            <button onClick={() => setScannerOpen(false)} className="w-full px-4 py-2 bg-slate-200 rounded">Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="border rounded p-2">
         {cart.map(line => (
@@ -629,6 +686,29 @@ function OrderForm({ existingOrder, inventory, onSubmit, onCancel }) {
       <div className="flex justify-end gap-2">
         <button onClick={onCancel} className="px-4 py-2 bg-slate-200 rounded font-bold">Cancel</button>
         <button onClick={() => handleSubmit(true)} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold">Save & Sync</button>
+      </div>
+    </div>
+  );
+}
+
+function BarcodeModal({ item, onClose }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    if (canvasRef.current && window.JsBarcode) {
+      try {
+        window.JsBarcode(canvasRef.current, item.sku, { format: "CODE128", displayValue: true, width: 2, height: 70, margin: 10 });
+      } catch (e) { console.error("Barcode render failed:", e); }
+    }
+  }, [item]);
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 text-center">
+        <h3 className="font-bold">{item.name}</h3>
+        <canvas ref={canvasRef}></canvas>
+        <div className="flex justify-center gap-2 pt-2">
+          <button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded">Close</button>
+          <button onClick={() => window.print()} className="px-4 py-2 bg-indigo-600 text-white rounded">Print</button>
+        </div>
       </div>
     </div>
   );
@@ -684,8 +764,10 @@ function InventoryModal({ item, inventory, onClose, onSave }) {
   };
 
   const handleSave = () => {
+    const sku = form.sku.trim() || ('SKU' + Date.now().toString(36).toUpperCase());
     onSave({
       ...form,
+      sku,
       stock: Number(form.stock) || 0,
       unitCost: Number(form.unitCost) || 0,
       sellingPrice: Number(form.sellingPrice) || 0,
