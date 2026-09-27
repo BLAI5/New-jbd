@@ -844,7 +844,10 @@ function OrderForm({ existingOrder, inventory, customers, vendors, onSubmit, onC
           <div key={line.itemId} className="flex justify-between items-center py-2 border-b text-sm">
             <span className="font-bold">{line.name}</span>
             <div className="flex items-center gap-2">
-              Qty: <input type="number" value={line.qty} onChange={e => updateQty(line.itemId, e.target.value)} className="w-16 p-1 border rounded text-center" />
+              Qty:
+              <button onClick={() => updateQty(line.itemId, line.qty - 1)} className="w-6 h-6 border bg-white rounded font-bold">-</button>
+              <input type="number" value={line.qty} onFocus={e => e.target.select()} onChange={e => updateQty(line.itemId, e.target.value)} className="w-16 p-1 border rounded text-center" />
+              <button onClick={() => updateQty(line.itemId, line.qty + 1)} className="w-6 h-6 border bg-white rounded font-bold">+</button>
               <button onClick={() => setCart(cart.filter(c => c.itemId !== line.itemId))} className="text-rose-600 px-2">X</button>
             </div>
           </div>
