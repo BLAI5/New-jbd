@@ -15,6 +15,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 :root{ box-sizing:border-box; }
 body{ font-family:'Inter',sans-serif, system-ui; margin:0; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+@media print {
+  body * { visibility: hidden; }
+  #print-label, #print-label * { visibility: visible; }
+  #print-label { position: absolute; left: 0; top: 0; }
+}
 </style>
 <script>
 window.addEventListener('error', function (e) {
@@ -1118,10 +1123,18 @@ function BarcodeModal({ item, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 text-center">
-        <h3 className="font-bold">{item.name}</h3>
-        <p className="text-xs text-slate-400">{item.sku}</p>
         {error && <p className="text-sm text-rose-600">{error}</p>}
-        <div ref={containerRef} className="flex justify-center"></div>
+        <div id="print-label" className="flex flex-col items-center bg-white p-2">
+          <div ref={containerRef} className="flex justify-center"></div>
+          <div className="text-center text-slate-800 mt-1" style={{ fontSize: '10px', lineHeight: '1.25' }}>
+            <div className="font-bold">{item.name}</div>
+            {(item.size || item.color) && (
+              <div>{item.size ? ('Size ' + item.size) : ''}{(item.size && item.color) ? ' • ' : ''}{item.color ? ('Color ' + item.color) : ''}</div>
+            )}
+            {item.category && <div>{item.category}</div>}
+            <div>SKU: {item.sku}</div>
+          </div>
+        </div>
         <div className="flex justify-center gap-2 pt-2">
           <button onClick={onClose} className="px-4 py-2 bg-slate-200 rounded">Close</button>
           <button onClick={() => window.print()} className="px-4 py-2 bg-indigo-600 text-white rounded">Print</button>
